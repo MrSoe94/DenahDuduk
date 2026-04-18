@@ -1,0 +1,2103 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Aplikasi Kartu Ujian (Custom)</title>
+
+  <!-- PDF Export (html2pdf.js) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
+  <!-- QR Code (qrcodejs) -->
+  <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+  <!-- XLSX Import/Export (SheetJS) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" crossorigin="anonymous"></script>
+
+  <style>
+    :root{
+      --bg: #0b1220;
+      --panel: rgba(255,255,255,.06);
+      --panel2: rgba(255,255,255,.10);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.72);
+      --line: rgba(255,255,255,.12);
+      --accent: #7c3aed;
+      --accent2:#22c55e;
+      --danger: #ef4444;
+      --warn: #f59e0b;
+      --ok: #22c55e;
+      --shadow: 0 16px 40px rgba(0,0,0,.35);
+      --radius: 16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:var(--sans);
+      background: radial-gradient(1200px 800px at 20% 0%, rgba(124,58,237,.25), transparent 55%),
+                  radial-gradient(1200px 800px at 80% 20%, rgba(34,197,94,.18), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+    }
+    a{color:inherit}
+    .wrap{max-width:1100px;margin:0 auto;padding:20px}
+    .topbar{
+      display:flex; gap:14px; align-items:center; justify-content:space-between;
+      padding:14px 16px; background:var(--panel); border:1px solid var(--line);
+      border-radius:var(--radius); box-shadow:var(--shadow);
+    }
+    .brand{
+      display:flex; gap:12px; align-items:center;
+    }
+    .logo{
+      width:38px; height:38px; border-radius:12px;
+      background: linear-gradient(135deg, var(--accent), #0ea5e9);
+      box-shadow: 0 10px 18px rgba(124,58,237,.25);
+    }
+    .brand h1{font-size:15px; margin:0}
+    .brand p{font-size:12px; margin:2px 0 0; color:var(--muted)}
+    .tabs{display:flex; gap:8px; flex-wrap:wrap}
+    .tab{
+      border:1px solid var(--line);
+      background:transparent; color:var(--text);
+      padding:10px 12px; border-radius:12px; cursor:pointer;
+      transition: .15s ease;
+    }
+    .tab.active{
+      background: rgba(124,58,237,.18);
+      border-color: rgba(124,58,237,.45);
+    }
+    .btn{
+      border:1px solid var(--line);
+      background: var(--panel2);
+      color: var(--text);
+      padding:10px 12px; border-radius:12px;
+      cursor:pointer;
+      transition:.15s ease;
+    }
+    .btn:hover{transform: translateY(-1px)}
+    .btn.primary{background: rgba(124,58,237,.30); border-color: rgba(124,58,237,.55)}
+    .btn.green{background: rgba(34,197,94,.22); border-color: rgba(34,197,94,.45)}
+    .btn.red{background: rgba(239,68,68,.22); border-color: rgba(239,68,68,.45)}
+    .btn.warn{background: rgba(245,158,11,.18); border-color: rgba(245,158,11,.40)}
+    .grid{
+      display:grid; gap:14px;
+      grid-template-columns: 1.05fr .95fr;
+      margin-top:14px;
+    }
+    @media (max-width: 980px){ .grid{grid-template-columns: 1fr} }
+    .card{
+      background: var(--panel); border:1px solid var(--line);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 14px;
+    }
+    .card h2{margin:0 0 10px; font-size:14px}
+    .row{display:grid; gap:10px; grid-template-columns: 1fr 1fr}
+    @media (max-width: 640px){ .row{grid-template-columns: 1fr} }
+    label{display:block; font-size:12px; color:var(--muted); margin:0 0 6px}
+    input, select, textarea{
+      width:100%;
+      padding:10px 10px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      outline:none;
+    }
+    textarea{min-height:120px; font-family: var(--mono); font-size:12px}
+    .muted{color:var(--muted); font-size:12px}
+    .hr{height:1px; background: var(--line); margin:12px 0}
+    table{width:100%; border-collapse:collapse; overflow:hidden; border-radius:12px}
+    th, td{padding:10px 10px; border-bottom:1px solid var(--line); font-size:13px; vertical-align:top}
+    th{font-size:12px; color:var(--muted); text-align:left; background: rgba(255,255,255,.05)}
+    tr:hover td{background: rgba(255,255,255,.03)}
+    .actions{display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end}
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px; border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.05);
+      font-size:12px; color:var(--muted);
+    }
+    .pill b{color:var(--text)}
+    .hide{display:none!important}
+    .inputError{
+      border-color: rgba(239,68,68,.65) !important;
+      box-shadow: 0 0 0 2px rgba(239,68,68,.18);
+    }
+    .statusRow{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .toastWrap{
+      position:fixed;
+      right:16px;
+      bottom:16px;
+      z-index:9999;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      pointer-events:none;
+    }
+    .toast{
+      background: rgba(10,14,25,.92);
+      color: #f8fafc;
+      border:1px solid rgba(255,255,255,.16);
+      border-left: 4px solid #0ea5e9;
+      border-radius:10px;
+      padding:10px 12px;
+      min-width:220px;
+      max-width:360px;
+      font-size:13px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.35);
+      opacity:0;
+      transform:translateY(8px);
+      transition: opacity .2s ease, transform .2s ease;
+    }
+    .toast.show{opacity:1; transform:translateY(0)}
+    .toast.ok{border-left-color:#22c55e}
+    .toast.warn{border-left-color:#f59e0b}
+    .toast.err{border-left-color:#ef4444}
+
+    /* ===== DENAH DUDUK ===== */
+    .seatTools{display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; justify-content:space-between}
+    .seatTools .left, .seatTools .right{display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end}
+    .seatGridWrap{overflow:auto; padding:10px; border:1px solid var(--line); border-radius:12px; background: rgba(255,255,255,.03)}
+    .seatFront{display:flex; flex-direction:column; gap:8px; margin-bottom:10px}
+    .seatBoard{
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:10px;
+      background: rgba(255,255,255,.05);
+      font-weight:800;
+      text-align:center;
+      letter-spacing:.3px;
+    }
+    .seatTeacher{
+      border:1px dashed var(--line);
+      border-radius:10px;
+      padding:10px;
+      background: rgba(0,0,0,.12);
+      text-align:center;
+      color: var(--muted);
+      font-weight:700;
+    }
+    .seatGrid{
+      display:grid;
+      gap: var(--seatGap, 8px);
+      justify-content:start;
+      align-content:start;
+    }
+    .seatCell{
+      width: 120px;
+      height: var(--seatCellH, 70px);
+      min-height: var(--seatCellH, 70px);
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px;
+      background: rgba(0,0,0,.18);
+      cursor:pointer;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .seatCell.active{outline: 2px solid rgba(124,58,237,.65)}
+    .seatCell .seatNo{font-size:12px; color:var(--muted)}
+    .seatCell .seatName{font-size:13px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+    .seatCell .seatMeta{font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+    .seatAssign{display:grid; gap:10px; grid-template-columns: 1fr 1fr}
+    @media (max-width: 820px){ .seatAssign{grid-template-columns: 1fr} }
+
+    /* Print seating sheet */
+    .seatSheet{
+      width: var(--printPageW, 210mm);
+      min-height: var(--printPageH, 297mm);
+      background:#fff;
+      margin:0 auto;
+      padding: 12mm;
+      box-shadow:none;
+      color:#111;
+    }
+    .seatHeader{display:flex; justify-content:space-between; gap:10px; margin-bottom:8mm}
+    .seatHeader h3{margin:0; font-size:14px; text-align:center}
+    .seatHeader .sub{margin:4px 0 0; font-size:12px; color:#444; text-align:center}
+    .seatFrontPrint{display:flex; flex-direction:column; gap:3mm; margin-bottom:5mm}
+    .seatBoardPrint{border:1px solid rgba(0,0,0,.35); border-radius:6px; padding:3mm; text-align:center; font-weight:800}
+    .seatTeacherPrint{border:1px dashed rgba(0,0,0,.35); border-radius:6px; padding:3mm; text-align:center; font-weight:700; color:#333}
+    .seatGridPrint{display:grid; gap: var(--seatGapPrint, 3mm); justify-content:start}
+    .seatCellPrint{
+      border:1px solid rgba(0,0,0,.25);
+      border-radius:6px;
+      padding:3mm;
+      height: var(--seatCellHPrint, 18mm);
+      min-height: var(--seatCellHPrint, 18mm);
+      overflow:hidden;
+    }
+    .seatCellPrint .seatNo{font-size:9px; color:#555}
+    .seatCellPrint .seatName{font-size:11px; font-weight:800; margin-top:1mm}
+    .seatCellPrint .seatMeta{font-size:9px; color:#333; margin-top:1mm}
+
+    /* ===== KARTU (Preview) ===== */
+    .previewTools{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between}
+    .previewTools .left, .previewTools .right{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+
+    /* Area print (A4) */
+    .paper{
+      background:#fff; color:#111;
+      border-radius:16px;
+      padding:14px;
+      overflow:hidden;
+      border: 1px solid rgba(0,0,0,.08);
+    }
+    .paperMeta{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:10px}
+    .paperMeta h3{margin:0; font-size:14px; text-align:center}
+    .paperMeta p{margin:4px 0 0; font-size:12px; color:#444; text-align:center}
+    .sheet{
+      width: 210mm;
+      min-height: 297mm;
+      background: #fff;
+      margin: 0 auto;
+      padding: 10mm;
+      box-shadow: 0 10px 30px rgba(0,0,0,.10);
+      overflow:hidden;
+    }
+    .cardsGrid{
+      display:grid;
+      gap: 6mm;
+    }
+
+    /* Kartu - menggunakan CSS variable dari template */
+    .examCard{
+      width: var(--cardW, 95mm);
+      height: var(--cardH, 55mm);
+      border: 2px solid #000000;
+      border-radius: 10px;
+      overflow:hidden;
+      position:relative;
+      font-family: var(--cardFont, Arial);
+      background: var(--cardBg, #ffffff);
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .examCard .bar{
+      height: 12mm;
+      background: var(--cardPrimary, #4f46e5);
+      color: #fff;
+      padding: 3mm 4mm;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:3mm;
+    }
+    .examCard .bar .title{
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.1;
+      max-width: 72%;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      max-height: calc(11px * 1.1 * 2);
+      overflow: hidden;
+    }
+    .examCard .bar .sub{
+      font-size: 9px;
+      opacity: .92;
+      margin-top: 1mm;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .examCard .body{
+      padding: 4mm;
+      display:flex;
+      gap: 4mm;
+      height: calc(100% - 12mm);
+    }
+    .examCard .photo{
+      width: 18mm;
+      height: 24mm;
+      border: 1px solid rgba(0,0,0,.25);
+      border-radius: 6px;
+      overflow:hidden;
+      background: rgba(0,0,0,.03);
+      flex: 0 0 auto;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size: 9px;
+      color:#666;
+    }
+    .examCard .photo img{width:100%; height:100%; object-fit:cover; display:block}
+    .examCard .info{
+      flex: 1 1 auto;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      min-width:0;
+    }
+    .examCard .name{
+      font-size: 12px;
+      font-weight: 800;
+      margin: 0 0 1.5mm;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .examCard .line{
+      display:grid;
+      grid-template-columns: 22mm 1fr;
+      gap: 2mm;
+      font-size: 10px;
+      margin: 1mm 0;
+      min-width: 0;
+    }
+    .examCard .label{color:#444; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+    .examCard .value{font-weight:700; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+    .examCard .foot{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap: 3mm;
+      margin-top: 2mm;
+    }
+    .examCard .stamp{
+      font-size: 9px;
+      color:#333;
+      min-width: 45mm;
+    }
+    .examCard .stamp .sigName,
+    .examCard .stamp .sigNip{
+      display:block;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .examCard .stamp .sigName{
+      font-weight:700;
+      padding-bottom: 1mm;
+      margin-bottom: 1mm;
+      border-bottom: 1px dashed rgba(0,0,0,.35);
+    }
+    .examCard .qr{
+      width: 20mm; height: 20mm;
+      border: 1px solid rgba(0,0,0,.20);
+      border-radius: 6px;
+      overflow:hidden;
+      display:flex; align-items:center; justify-content:center;
+      align-self: flex-start;
+    }
+    .examCard .qr canvas,
+    .examCard .qr img{
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+
+    /* Print */
+    @page { size: A4 portrait; margin: 0; }
+    @page landscapePage { size: A4 landscape; margin: 0; }
+    @media print {
+      body{background:#fff}
+      .wrap, .topbar, .card, .paper, .previewTools, .noPrint { display:none !important; }
+      #printRoot { display:block !important; }
+      .sheet{ box-shadow:none; margin:0; }
+      .sheet, .seatSheet{
+        color:#000 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .examCard, .examCard *{
+        color:#000 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .examCard{
+        border: 2px solid #000 !important;
+        background:#fff !important;
+      }
+      .examCard .bar{
+        background:#fff !important;
+        border-bottom: 1px solid #000 !important;
+        color:#000 !important;
+      }
+      .examCard .photo,
+      .examCard .qr,
+      .examCard .stamp .sigName,
+      .examCard .line .label,
+      .examCard .line .value{
+        color:#000 !important;
+        border-color:#000 !important;
+      }
+      .examCard .photo,
+      .examCard .qr,
+      .examCard .stamp .sigName{
+        border: 1px solid #000 !important;
+      }
+      .examCard .stamp .sigName{
+        border-bottom: 1px dashed #000 !important;
+      }
+      .seatBoardPrint,
+      .seatTeacherPrint,
+      .seatCellPrint{
+        border-color:#000 !important;
+        color:#000 !important;
+      }
+      .seatHeader .sub,
+      .seatTeacherPrint,
+      .seatCellPrint .seatNo,
+      .seatCellPrint .seatMeta{
+        color:#000 !important;
+      }
+    }
+  </style>
+  <style id="printPageStyle"></style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>Aplikasi Kartu Ujian (Custom Template)</h1>
+          <p>Input data â†’ atur template â†’ preview â†’ print / PDF</p>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" data-tab="data">Data Peserta</button>
+        <button class="tab" data-tab="template">Desain Kartu</button>
+        <button class="tab" data-tab="preview">Preview & Cetak</button>
+        <button class="tab" data-tab="seating">Denah Duduk</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT -->
+      <div class="card" id="panel-data">
+        <h2>Data Peserta</h2>
+        <div class="muted">Isi Nama dan ID, lalu tekan Ctrl+Enter untuk simpan cepat.</div>
+
+        <div class="row">
+          <div>
+            <label>Nama *</label>
+            <input id="in_name" placeholder="Contoh: Siti Nurhaliza" />
+          </div>
+          <div>
+            <label>NISN / NIM / ID *</label>
+            <input id="in_idno" placeholder="Contoh: 0051234567" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label>Kelas</label>
+            <input id="in_class" placeholder="Contoh: 9A" />
+          </div>
+          <div>
+            <label>Ruang</label>
+            <input id="in_room" placeholder="Contoh: 03" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label>Sesi</label>
+            <input id="in_session" placeholder="Contoh: 1 / Pagi" />
+          </div>
+          <div>
+            <label>No. Duduk</label>
+            <input id="in_seat" placeholder="Contoh: 12" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label>URL Foto (opsional)</label>
+            <input id="in_photoUrl" placeholder="https://..." />
+            <div class="muted">Bisa kosong. Atau pakai upload di bawah.</div>
+          </div>
+          <div>
+            <label>Upload Foto (opsional)</label>
+            <input id="in_photoFile" type="file" accept="image/*" />
+            <div class="muted">Disimpan sebagai dataURL (ukuran file kecil lebih aman).</div>
+          </div>
+        </div>
+
+        <div class="actions" style="margin-top:12px">
+          <button class="btn primary" id="btnAdd">Tambah / Update</button>
+          <button class="btn" id="btnResetForm">Reset Form</button>
+          <div class="statusRow">
+            <span class="pill hide" id="editBadge">Mode Edit</span>
+            <span class="pill"><b id="statCount">0</b> peserta</span>
+            <span class="pill"><b id="statFiltered">0</b> hasil</span>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="row">
+          <div style="grid-column:1/-1">
+            <label>Pencarian</label>
+            <input id="search" placeholder="Cari nama / ID / kelas / ruang..." />
+          </div>
+        </div>
+
+        <div class="actions" style="margin-top:12px; justify-content:flex-start">
+          <button class="btn green" id="btnExportJson">Export JSON</button>
+          <label class="btn" style="display:inline-flex; gap:10px; align-items:center; cursor:pointer">
+            Import JSON
+            <input id="importJson" type="file" accept="application/json" style="display:none" />
+          </label>
+          <button class="btn" id="btnExportXlsxTemplate">Download Template XLSX</button>
+          <label class="btn" style="display:inline-flex; gap:10px; align-items:center; cursor:pointer">
+            Import XLSX
+            <input id="importXlsx" type="file" accept=".xlsx,.xls" style="display:none" />
+          </label>
+          <button class="btn red" id="btnClearAll">Hapus Semua</button>
+        </div>
+
+        <div style="margin-top:12px; overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Nama</th>
+                <th>ID</th>
+                <th>Kelas</th>
+                <th>Ruang</th>
+                <th>Sesi</th>
+                <th>No</th>
+                <th style="width:170px">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="card" id="panel-template">
+        <h2>Desain Kartu</h2>
+
+        <div class="row">
+          <div>
+            <label>Nama Sekolah</label>
+            <input id="t_school" placeholder="Contoh: SMP Negeri 1" />
+          </div>
+          <div>
+            <label>Judul Ujian</label>
+            <input id="t_exam" placeholder="Contoh: Ujian Semester Ganjil" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label>Tahun / Semester</label>
+            <input id="t_year" placeholder="Contoh: 2025/2026" />
+          </div>
+          <div>
+            <label>Font</label>
+            <select id="t_font">
+              <option value="Arial">Arial</option>
+              <option value="Calibri">Calibri</option>
+              <option value="Tahoma">Tahoma</option>
+              <option value="Verdana">Verdana</option>
+              <option value="Times New Roman">Times New Roman</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label>Nama Kepala Sekolah</label>
+            <input id="t_principal" placeholder="Contoh: Drs. Budi Santoso" />
+          </div>
+          <div>
+            <label>NIP Kepala Sekolah</label>
+            <input id="t_nip" placeholder="Contoh: 19650101 199001 1 001" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div style="grid-column:1/-1">
+            <label>Teks Tanda Tangan</label>
+            <input id="t_sigLabel" placeholder="Contoh: TTD Kepala Sekolah" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label>Teks Papan Tulis</label>
+            <input id="t_boardText" placeholder="Contoh: PAPAN TULIS" />
+          </div>
+          <div>
+            <label>Teks Meja Guru</label>
+            <input id="t_teacherText" placeholder="Contoh: MEJA GURU" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label>Lebar Kartu (mm)</label>
+            <input id="t_w" type="number" min="50" max="200" />
+          </div>
+          <div>
+            <label>Tinggi Kartu (mm)</label>
+            <input id="t_h" type="number" min="40" max="120" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label>Warna Header</label>
+            <input id="t_primary" type="color" />
+          </div>
+          <div>
+            <label>Warna Latar</label>
+            <input id="t_bg" type="color" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label>Tampilkan Foto</label>
+            <select id="t_showPhoto">
+              <option value="1">Ya</option>
+              <option value="0">Tidak</option>
+            </select>
+          </div>
+          <div>
+            <label>Tampilkan QR Code</label>
+            <select id="t_showQr">
+              <option value="1">Ya</option>
+              <option value="0">Tidak</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="row">
+          <div style="grid-column:1/-1">
+            <label>Mode Desain</label>
+            <select id="t_mode">
+              <option value="simple">Simple (Form)</option>
+              <option value="html">Template HTML (Advanced)</option>
+            </select>
+            <div class="muted">Mode HTML bebas mengubah layout memakai placeholder: {{school}}, {{exam}}, {{year}}, {{principal}}, {{nip}}, {{name}}, {{idno}}, {{class}}, {{room}}, {{session}}, {{seat}}, {{photo}}, {{qr}}</div>
+          </div>
+        </div>
+
+        <div id="advancedBox" class="hide" style="margin-top:10px">
+          <label>Template HTML Kartu</label>
+          <textarea id="t_html"></textarea>
+          <div class="muted">Tips: pastikan kontainer luar memakai class <span style="font-family:var(--mono)">examCard</span> agar ukuran mengikuti setting mm.</div>
+        </div>
+
+        <div class="actions" style="margin-top:12px">
+          <button class="btn primary" id="btnSaveTemplate">Simpan Template</button>
+          <button class="btn" id="btnResetTemplate">Reset Template</button>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="muted">Preview cepat (1 kartu contoh):</div>
+        <div class="paper" style="margin-top:10px">
+          <div id="miniPreview"></div>
+        </div>
+      </div>
+
+      <!-- Preview Panel (full width) -->
+      <div class="card" id="panel-preview" style="grid-column: 1 / -1">
+        <div class="previewTools">
+          <div class="left">
+            <span class="pill">Layout</span>
+            <select id="p_layout" style="width:180px">
+              <option value="1">1 kartu / halaman</option>
+              <option value="2">2 kartu / halaman</option>
+              <option value="4" selected>4 kartu / halaman</option>
+              <option value="8">8 kartu / halaman</option>
+            </select>
+
+            <span class="pill">Orientasi</span>
+            <select id="p_orientation" style="width:160px">
+              <option value="portrait" selected>Portrait</option>
+              <option value="landscape">Landscape</option>
+            </select>
+
+            <span class="pill">Urutkan</span>
+            <select id="p_sort" style="width:210px">
+              <option value="name">Nama (A-Z)</option>
+              <option value="class">Kelas (A-Z)</option>
+              <option value="room">Ruang (A-Z)</option>
+              <option value="seat">No Duduk (angka)</option>
+            </select>
+          </div>
+
+          <div class="right">
+            <button class="btn" id="btnRefreshPreview">Refresh Preview</button>
+            <button class="btn green" id="btnPrint">Print</button>
+            <button class="btn primary" id="btnPdf">Export PDF</button>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="paper">
+          <div class="paperMeta">
+            <div>
+              <h3>Preview Halaman A4</h3>
+              <p>Gunakan Print untuk cetak, atau Export PDF untuk simpan file.</p>
+            </div>
+            <div class="muted" id="metaInfo"></div>
+          </div>
+
+          <div id="previewArea"></div>
+        </div>
+      </div>
+
+      <!-- Seating Plan Panel (full width) -->
+      <div class="card" id="panel-seating" style="grid-column: 1 / -1">
+        <div class="previewTools">
+          <div class="left">
+            <span class="pill">Ruangan</span>
+            <select id="seat_room" style="width:220px"></select>
+
+            <span class="pill">Sesi</span>
+            <select id="seat_session" style="width:180px"></select>
+
+            <span class="pill">Baris</span>
+            <input id="seat_rows" type="number" min="1" max="30" style="width:100px" />
+
+            <span class="pill">Kolom</span>
+            <input id="seat_cols" type="number" min="1" max="30" style="width:100px" />
+
+            <span class="pill">Gap</span>
+            <input id="seat_gap" type="number" min="0" max="50" step="1" style="width:100px" />
+
+            <span class="pill">Tinggi</span>
+            <input id="seat_height" type="number" min="30" max="200" step="1" style="width:100px" />
+
+            <span class="pill">Orientasi</span>
+            <select id="seat_orientation" style="width:160px">
+              <option value="portrait" selected>Portrait</option>
+              <option value="landscape">Landscape</option>
+            </select>
+
+            <span class="pill">Urutan</span>
+            <select id="seat_order" style="width:160px">
+              <option value="left" selected>Kiri</option>
+              <option value="right">Kanan</option>
+              <option value="random">Acak</option>
+            </select>
+          </div>
+
+          <div class="right">
+            <button class="btn" id="btnSeatRefresh">Refresh</button>
+            <button class="btn warn" id="btnSeatAuto">Auto Isi</button>
+            <button class="btn red" id="btnSeatClear">Kosongkan</button>
+            <button class="btn green" id="btnSeatPrint">Print Denah</button>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="seatAssign">
+          <div>
+            <div class="muted" style="margin-bottom:8px">Klik kursi untuk memilih, lalu atur peserta pada panel kanan.</div>
+            <div class="seatGridWrap">
+              <div class="seatFront">
+                <div class="seatBoard" id="seatBoardText">PAPAN TULIS</div>
+                <div class="seatTeacher" id="seatTeacherText">MEJA GURU</div>
+              </div>
+              <div id="seatGrid" class="seatGrid"></div>
+            </div>
+          </div>
+
+          <div>
+            <h2 style="margin-top:0">Assign Kursi</h2>
+            <div class="row">
+              <div>
+                <label>Kursi Terpilih</label>
+                <input id="seat_selected" disabled />
+              </div>
+              <div>
+                <label>Pilih Peserta</label>
+                <select id="seat_student"></select>
+              </div>
+            </div>
+
+            <div class="actions" style="margin-top:12px; justify-content:flex-start">
+              <button class="btn primary" id="btnSeatAssign">Simpan ke Kursi</button>
+              <button class="btn" id="btnSeatUnassign">Hapus dari Kursi</button>
+              <button class="btn green" id="btnSeatAutoNext">Auto Isi Next</button>
+            </div>
+
+            <div class="hr"></div>
+            <div class="muted" id="seatInfo"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden print root (only visible in print) -->
+  <div id="printRoot" class="hide"></div>
+  <div id="toastWrap" class="toastWrap" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    // ===== Storage Keys =====
+    const KEY_STUDENTS = "examCard.students.v1";
+    const KEY_TEMPLATE = "examCard.template.v1";
+    const KEY_EDITING = "examCard.editingId.v1";
+    const KEY_SEATING = "examCard.seating.v1";
+    const KEY_ACTIVE_TAB = "examCard.activeTab.v1";
+
+    // ===== Default Template =====
+    const DEFAULT_TEMPLATE = {
+      mode: "simple",
+      school: "UPT SD NEGERI 067953",
+      exam: "DENAH DUDUK TKA",
+      year: "2025/2026",
+      principal: "Kepala Sekolah",
+      nip: "-",
+      sigLabel: "TTD Kepala Sekolah",
+      boardText: "PAPAN TULIS",
+      teacherText: "MEJA GURU",
+      wMm: 95,
+      hMm: 55,
+      primary: "#4f46e5",
+      bg: "#ffffff",
+      font: "Arial",
+      showPhoto: true,
+      showQr: true,
+      html: `
+<div class="examCard">
+  <div class="bar">
+    <div style="min-width:0">
+      <div class="title">{{exam}}</div>
+      <div class="sub">{{school}} â€¢ {{year}}</div>
+    </div>
+    <div style="text-align:right; font-size:9px; opacity:.95; white-space:nowrap">Kartu Ujian</div>
+  </div>
+
+  <div class="body">
+    <div class="photo">{{photo}}</div>
+    <div class="info">
+      <div>
+        <div class="name">{{name}}</div>
+        <div class="line"><div class="label">ID</div><div class="value">{{idno}}</div></div>
+        <div class="line"><div class="label">Kelas</div><div class="value">{{class}}</div></div>
+        <div class="line"><div class="label">Ruang</div><div class="value">{{room}}</div></div>
+        <div class="line"><div class="label">Sesi</div><div class="value">{{session}}</div></div>
+        <div class="line"><div class="label">No Duduk</div><div class="value">{{seat}}</div></div>
+      </div>
+
+      <div class="foot">
+        <div class="stamp">
+          <span>{{sigLabel}}</span>
+          <span class="sigName">{{principal}}</span>
+          <span class="sigNip">NIP. {{nip}}</span>
+        </div>
+        <div class="qr">{{qr}}</div>
+      </div>
+    </div>
+  </div>
+</div>`.trim()
+    };
+
+    // ===== State =====
+    let students = loadStudents();
+    let template = loadTemplate();
+
+    // ===== Elements =====
+    const tabs = document.querySelectorAll(".tab");
+    const panelData = document.getElementById("panel-data");
+    const panelTemplate = document.getElementById("panel-template");
+    const panelPreview = document.getElementById("panel-preview");
+    const panelSeating = document.getElementById("panel-seating");
+
+    const in_name = document.getElementById("in_name");
+    const in_idno = document.getElementById("in_idno");
+    const in_class = document.getElementById("in_class");
+    const in_room = document.getElementById("in_room");
+    const in_session = document.getElementById("in_session");
+    const in_seat = document.getElementById("in_seat");
+    const in_photoUrl = document.getElementById("in_photoUrl");
+    const in_photoFile = document.getElementById("in_photoFile");
+    const search = document.getElementById("search");
+    const tbody = document.getElementById("tbody");
+    const statCount = document.getElementById("statCount");
+    const statFiltered = document.getElementById("statFiltered");
+    const editBadge = document.getElementById("editBadge");
+    const btnAdd = document.getElementById("btnAdd");
+    const toastWrap = document.getElementById("toastWrap");
+
+    const t_school = document.getElementById("t_school");
+    const t_exam = document.getElementById("t_exam");
+    const t_year = document.getElementById("t_year");
+    const t_font = document.getElementById("t_font");
+    const t_principal = document.getElementById("t_principal");
+    const t_nip = document.getElementById("t_nip");
+    const t_sigLabel = document.getElementById("t_sigLabel");
+    const t_boardText = document.getElementById("t_boardText");
+    const t_teacherText = document.getElementById("t_teacherText");
+    const t_w = document.getElementById("t_w");
+    const t_h = document.getElementById("t_h");
+    const t_primary = document.getElementById("t_primary");
+    const t_bg = document.getElementById("t_bg");
+    const t_showPhoto = document.getElementById("t_showPhoto");
+    const t_showQr = document.getElementById("t_showQr");
+    const t_mode = document.getElementById("t_mode");
+    const t_html = document.getElementById("t_html");
+    const advancedBox = document.getElementById("advancedBox");
+    const miniPreview = document.getElementById("miniPreview");
+
+    const p_layout = document.getElementById("p_layout");
+    const p_orientation = document.getElementById("p_orientation");
+    const p_sort = document.getElementById("p_sort");
+    const previewArea = document.getElementById("previewArea");
+    const metaInfo = document.getElementById("metaInfo");
+    const printRoot = document.getElementById("printRoot");
+    const printPageStyle = document.getElementById("printPageStyle");
+
+    const seat_room = document.getElementById("seat_room");
+    const seat_session = document.getElementById("seat_session");
+    const seat_rows = document.getElementById("seat_rows");
+    const seat_cols = document.getElementById("seat_cols");
+    const seat_gap = document.getElementById("seat_gap");
+    const seat_height = document.getElementById("seat_height");
+    const seat_orientation = document.getElementById("seat_orientation");
+    const seat_order = document.getElementById("seat_order");
+    const seatGrid = document.getElementById("seatGrid");
+    const seat_selected = document.getElementById("seat_selected");
+    const seat_student = document.getElementById("seat_student");
+    const seatInfo = document.getElementById("seatInfo");
+
+    // ===== Helpers =====
+    function uid(){
+      return (crypto?.randomUUID?.() || ("id-" + Date.now() + "-" + Math.random().toString(16).slice(2)));
+    }
+
+    function saveStudents(){ localStorage.setItem(KEY_STUDENTS, JSON.stringify(students)); }
+    function loadStudents(){
+      try{ return JSON.parse(localStorage.getItem(KEY_STUDENTS) || "[]"); }catch{ return []; }
+    }
+
+    function saveTemplate(){ localStorage.setItem(KEY_TEMPLATE, JSON.stringify(template)); }
+    function loadTemplate(){
+      try{
+        const raw = localStorage.getItem(KEY_TEMPLATE);
+        if(!raw) return structuredClone(DEFAULT_TEMPLATE);
+        const t = JSON.parse(raw);
+        return { ...structuredClone(DEFAULT_TEMPLATE), ...t };
+      }catch{
+        return structuredClone(DEFAULT_TEMPLATE);
+      }
+    }
+
+    function saveSeating(){ localStorage.setItem(KEY_SEATING, JSON.stringify(seating)); }
+    function loadSeating(){
+      try{ return JSON.parse(localStorage.getItem(KEY_SEATING) || "{}"); }catch{ return {}; }
+    }
+
+    function setEditingId(id){ localStorage.setItem(KEY_EDITING, id || ""); }
+    function getEditingId(){ return localStorage.getItem(KEY_EDITING) || ""; }
+
+    function sanitizeText(s){
+      return String(s ?? "").replace(/\s+/g, " ").trim();
+    }
+
+    function showToast(message, type = "ok"){
+      const el = document.createElement("div");
+      const cls = ["toast", type === "error" ? "err" : (type === "warning" ? "warn" : "ok")].join(" ");
+      el.className = cls;
+      el.textContent = String(message || "");
+      toastWrap.appendChild(el);
+      requestAnimationFrame(() => el.classList.add("show"));
+      setTimeout(() => {
+        el.classList.remove("show");
+        setTimeout(() => el.remove(), 240);
+      }, 2000);
+    }
+
+    function syncPrintPageStyle(){
+      const mode = p_orientation?.value === "landscape" ? "landscape" : "portrait";
+      setPageOrientation(mode);
+    }
+
+    function setPageOrientation(mode){
+      const orient = mode === "landscape" ? "landscape" : "portrait";
+      printPageStyle.textContent = `@media print { @page { size: A4 ${orient}; margin: 0; } }`;
+      const root = document.documentElement;
+      if(orient === "landscape"){
+        root.style.setProperty("--printPageW", "297mm");
+        root.style.setProperty("--printPageH", "210mm");
+      }else{
+        root.style.setProperty("--printPageW", "210mm");
+        root.style.setProperty("--printPageH", "297mm");
+      }
+    }
+
+    function getSeatGapMm(){
+      return Math.max(0, Math.min(50, toNumberOrZero(seat_gap?.value) || 8));
+    }
+
+    function getSeatHeightPx(){
+      return Math.max(30, Math.min(200, toNumberOrZero(seat_height?.value) || 70));
+    }
+
+    function getSeatHeightMm(){
+      return Math.max(12, Math.min(80, toNumberOrZero(seat_height?.value) || 18));
+    }
+
+    function getSeatOrientation(){
+      return seat_orientation?.value === "landscape" ? "landscape" : "portrait";
+    }
+
+    function setFieldError(el, isError){
+      if(!el) return;
+      el.classList.toggle("inputError", !!isError);
+    }
+
+    function sanitizeTemplateHTML(html){
+      // Basic hardening for advanced template mode.
+      // Prevents script injection and common inline-handler vectors.
+      const s = String(html ?? "");
+      return s
+        .replace(/<\s*script\b[^>]*>[\s\S]*?<\s*\/\s*script\s*>/gi, "")
+        .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+        .replace(/\s(href|src)\s*=\s*("|')\s*javascript:[\s\S]*?\2/gi, " $1=\"\"");
+    }
+
+    function toNumberOrZero(v){
+      const n = Number(String(v ?? "").replace(",", "."));
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function readImageFileAsDataURL(file){
+      return new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result);
+        fr.onerror = reject;
+        fr.readAsDataURL(file);
+      });
+    }
+
+    // ===== Tabs =====
+    function showTab(name){
+      tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === name));
+      panelData.classList.toggle("hide", name !== "data");
+      panelTemplate.classList.toggle("hide", name !== "template");
+      panelPreview.classList.toggle("hide", name !== "preview");
+      panelSeating.classList.toggle("hide", name !== "seating");
+      localStorage.setItem(KEY_ACTIVE_TAB, name);
+      if(name === "template") renderMiniPreview();
+      if(name === "preview") renderFullPreview();
+      if(name === "seating") renderSeatingUI();
+    }
+    tabs.forEach(t => t.addEventListener("click", () => showTab(t.dataset.tab)));
+
+    // ===== Data CRUD =====
+    function resetForm(){
+      setEditingId("");
+      in_name.value = "";
+      in_idno.value = "";
+      in_class.value = "";
+      in_room.value = "";
+      in_session.value = "";
+      in_seat.value = "";
+      in_photoUrl.value = "";
+      in_photoFile.value = "";
+      btnAdd.textContent = "Tambah / Update";
+      editBadge.classList.add("hide");
+      editBadge.textContent = "Mode Edit";
+      setFieldError(in_name, false);
+      setFieldError(in_idno, false);
+      in_name.focus();
+    }
+
+    async function addOrUpdate(){
+      const editingId = getEditingId();
+
+      const name = sanitizeText(in_name.value);
+      const idno = sanitizeText(in_idno.value);
+      const klass = sanitizeText(in_class.value);
+      const room = sanitizeText(in_room.value);
+      const session = sanitizeText(in_session.value);
+      const seat = sanitizeText(in_seat.value);
+
+      setFieldError(in_name, !name);
+      setFieldError(in_idno, !idno);
+      if(!name || !idno){
+        showToast("Nama dan ID wajib diisi.", "error");
+        (!name ? in_name : in_idno).focus();
+        return;
+      }
+
+      let photo = sanitizeText(in_photoUrl.value);
+      if(in_photoFile.files && in_photoFile.files[0]){
+        try{
+          photo = await readImageFileAsDataURL(in_photoFile.files[0]);
+        }catch(e){
+          showToast("Gagal membaca foto: " + e.message, "error");
+          return;
+        }
+      }
+
+      if(editingId){
+        const idx = students.findIndex(s => s.id === editingId);
+        if(idx >= 0){
+          students[idx] = { ...students[idx], name, idno, class: klass, room, session, seat, photo, order: students[idx].order ?? Date.now() };
+        }
+      }else{
+        students.unshift({ id: uid(), name, idno, class: klass, room, session, seat, photo, order: Date.now() });
+      }
+
+      saveStudents();
+      renderTable();
+      renderMiniPreview();
+      showToast(editingId ? "Data peserta diperbarui." : "Data peserta ditambahkan.");
+      resetForm();
+    }
+
+    function editStudent(id){
+      const s = students.find(x => x.id === id);
+      if(!s) return;
+      setEditingId(s.id);
+      in_name.value = s.name || "";
+      in_idno.value = s.idno || "";
+      in_class.value = s.class || "";
+      in_room.value = s.room || "";
+      in_session.value = s.session || "";
+      in_seat.value = s.seat || "";
+      in_photoUrl.value = (s.photo && String(s.photo).startsWith("data:")) ? "" : (s.photo || "");
+      in_photoFile.value = "";
+      btnAdd.textContent = "Update Data";
+      editBadge.textContent = `Mode Edit: ${s.name || "-"}`;
+      editBadge.classList.remove("hide");
+      showTab("data");
+      in_name.focus();
+    }
+
+    function deleteStudent(id){
+      if(!confirm("Hapus data peserta ini?")) return;
+      students = students.filter(s => s.id !== id);
+      saveStudents();
+      renderTable();
+      renderMiniPreview();
+      showToast("Data peserta dihapus.");
+    }
+
+    function renderTable(){
+      const q = sanitizeText(search.value).toLowerCase();
+      const filtered = students.filter(s => {
+        const blob = `${s.name} ${s.idno} ${s.class} ${s.room} ${s.session} ${s.seat}`.toLowerCase();
+        return blob.includes(q);
+      });
+
+      if(filtered.length === 0){
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="muted" style="text-align:center; padding:18px">Data tidak ditemukan.</td>
+          </tr>
+        `;
+      }else{
+        tbody.innerHTML = filtered.map(s => `
+        <tr>
+          <td>${escapeHtml(s.name)}</td>
+          <td>${escapeHtml(s.idno)}</td>
+          <td>${escapeHtml(s.class || "-")}</td>
+          <td>${escapeHtml(s.room || "-")}</td>
+          <td>${escapeHtml(s.session || "-")}</td>
+          <td>${escapeHtml(s.seat || "-")}</td>
+          <td>
+            <button class="btn" data-action="edit" data-id="${escapeHtml(s.id)}">Edit</button>
+            <button class="btn red" data-action="delete" data-id="${escapeHtml(s.id)}">Hapus</button>
+          </td>
+        </tr>
+      `).join("");
+      }
+
+      statCount.textContent = String(students.length);
+      statFiltered.textContent = String(filtered.length);
+    }
+
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function normalizeHeader(s){
+      return String(s ?? "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .replaceAll(".", "")
+        .replaceAll(":", "");
+    }
+
+    function cellToText(v){
+      return sanitizeText(v == null ? "" : String(v));
+    }
+
+    tbody.addEventListener("click", (e) => {
+      const btn = e.target?.closest?.("button[data-action]");
+      if(!btn) return;
+      const action = btn.getAttribute("data-action") || "";
+      const id = btn.getAttribute("data-id") || "";
+      if(action === "edit") editStudent(id);
+      if(action === "delete") deleteStudent(id);
+    });
+
+    // ===== Template =====
+    function bindTemplateToUI(){
+      t_school.value = template.school;
+      t_exam.value = template.exam;
+      t_year.value = template.year;
+      t_font.value = template.font;
+      t_principal.value = template.principal || "";
+      t_nip.value = template.nip || "";
+      t_sigLabel.value = template.sigLabel || "";
+      t_boardText.value = template.boardText || DEFAULT_TEMPLATE.boardText;
+      t_teacherText.value = template.teacherText || DEFAULT_TEMPLATE.teacherText;
+      t_w.value = template.wMm;
+      t_h.value = template.hMm;
+      t_primary.value = template.primary;
+      t_bg.value = template.bg;
+      t_showPhoto.value = template.showPhoto ? "1" : "0";
+      t_showQr.value = template.showQr ? "1" : "0";
+      t_mode.value = template.mode;
+      t_html.value = template.html;
+
+      advancedBox.classList.toggle("hide", template.mode !== "html");
+    }
+
+    function pullTemplateFromUI(){
+      template.school = sanitizeText(t_school.value) || DEFAULT_TEMPLATE.school;
+      template.exam = sanitizeText(t_exam.value) || DEFAULT_TEMPLATE.exam;
+      template.year = sanitizeText(t_year.value) || DEFAULT_TEMPLATE.year;
+      template.font = t_font.value || DEFAULT_TEMPLATE.font;
+
+      template.principal = sanitizeText(t_principal.value) || DEFAULT_TEMPLATE.principal;
+      template.nip = sanitizeText(t_nip.value) || DEFAULT_TEMPLATE.nip;
+      template.sigLabel = sanitizeText(t_sigLabel.value) || DEFAULT_TEMPLATE.sigLabel;
+      template.boardText = sanitizeText(t_boardText.value) || DEFAULT_TEMPLATE.boardText;
+      template.teacherText = sanitizeText(t_teacherText.value) || DEFAULT_TEMPLATE.teacherText;
+
+      template.wMm = Math.max(50, Math.min(200, toNumberOrZero(t_w.value) || DEFAULT_TEMPLATE.wMm));
+      template.hMm = Math.max(40, Math.min(120, toNumberOrZero(t_h.value) || DEFAULT_TEMPLATE.hMm));
+
+      template.primary = t_primary.value || DEFAULT_TEMPLATE.primary;
+      template.bg = t_bg.value || DEFAULT_TEMPLATE.bg;
+
+      template.showPhoto = (t_showPhoto.value === "1");
+      template.showQr = (t_showQr.value === "1");
+      template.mode = t_mode.value || "simple";
+
+      template.html = sanitizeTemplateHTML((t_html.value || DEFAULT_TEMPLATE.html).trim());
+    }
+
+    function resetTemplate(){
+      template = structuredClone(DEFAULT_TEMPLATE);
+      saveTemplate();
+      bindTemplateToUI();
+      renderMiniPreview();
+      showToast("Template direset ke default.");
+    }
+
+    function saveTemplateAction(){
+      pullTemplateFromUI();
+      saveTemplate();
+      bindTemplateToUI();
+      renderMiniPreview();
+      showToast("Template tersimpan.");
+    }
+
+    t_mode.addEventListener("change", () => {
+      pullTemplateFromUI();
+      advancedBox.classList.toggle("hide", t_mode.value !== "html");
+      renderMiniPreview();
+    });
+
+    ["input","change"].forEach(evt => {
+      [t_school,t_exam,t_year,t_font,t_principal,t_nip,t_sigLabel,t_boardText,t_teacherText,t_w,t_h,t_primary,t_bg,t_showPhoto,t_showQr,t_html].forEach(el => {
+        el.addEventListener(evt, () => {
+          pullTemplateFromUI();
+          renderMiniPreview();
+        });
+      });
+    });
+
+    // ===== Card Rendering =====
+    function cardStyleVars(){
+      return `
+        --cardW: ${template.wMm}mm;
+        --cardH: ${template.hMm}mm;
+        --cardPrimary: ${template.primary};
+        --cardBg: ${template.bg};
+        --cardFont: ${template.font};
+      `.trim();
+    }
+
+    function getPhotoHtml(student){
+      if(!template.showPhoto) return `<div style="display:none"></div>`;
+      if(student.photo){
+        return `<img src="${escapeHtml(student.photo)}" alt="Foto" />`;
+      }
+      return `<div>FOTO</div>`;
+    }
+
+    function getQrPlaceholder(student){
+      if(!template.showQr) return `<div style="display:none"></div>`;
+      return `<div class="qr" data-qr="1" data-qrtext="${escapeHtml(makeQrText(student))}" aria-label="QR"></div>`;
+    }
+
+    function makeQrText(student){
+      // Bisa kamu ubah formatnya sesuai kebutuhan sekolah
+      return `${student.idno}|${student.name}|${student.class || ""}|${student.room || ""}|${student.session || ""}|${student.seat || ""}`;
+    }
+
+    function buildCardHTML(student){
+      const data = {
+        school: template.school,
+        exam: template.exam,
+        year: template.year,
+        principal: template.principal || "-",
+        nip: template.nip || "-",
+        sigLabel: template.sigLabel || DEFAULT_TEMPLATE.sigLabel,
+        name: student.name || "-",
+        idno: student.idno || "-",
+        class: student.class || "-",
+        room: student.room || "-",
+        session: student.session || "-",
+        seat: student.seat || "-",
+      };
+
+      const photoHtml = `<div class="photo">${getPhotoHtml(student)}</div>`;
+      const qrHtml = getQrPlaceholder(student);
+
+      if(template.mode === "html"){
+        let html = sanitizeTemplateHTML(template.html);
+        html = html.replaceAll("{{school}}", escapeHtml(data.school));
+        html = html.replaceAll("{{exam}}", escapeHtml(data.exam));
+        html = html.replaceAll("{{year}}", escapeHtml(data.year));
+        html = html.replaceAll("{{sigLabel}}", escapeHtml(data.sigLabel));
+        html = html.replaceAll("{{principal}}", escapeHtml(data.principal));
+        html = html.replaceAll("{{nip}}", escapeHtml(data.nip));
+        html = html.replaceAll("{{headmaster}}", escapeHtml(data.principal)); // alias
+        html = html.replaceAll("{{headmasterNip}}", escapeHtml(data.nip)); // alias
+        html = html.replaceAll("{{name}}", escapeHtml(data.name));
+        html = html.replaceAll("{{idno}}", escapeHtml(data.idno));
+        html = html.replaceAll("{{class}}", escapeHtml(data.class));
+        html = html.replaceAll("{{room}}", escapeHtml(data.room));
+        html = html.replaceAll("{{session}}", escapeHtml(data.session));
+        html = html.replaceAll("{{seat}}", escapeHtml(data.seat));
+        html = html.replaceAll("{{photo}}", getPhotoHtml(student));
+        html = html.replaceAll("{{qr}}", template.showQr ? `<div class="qr" data-qr="1" data-qrtext="${escapeHtml(makeQrText(student))}"></div>` : `<div style="display:none"></div>`);
+        return html;
+      }
+
+      // Simple mode (fixed layout)
+      return `
+        <div class="examCard">
+          <div class="bar">
+            <div style="min-width:0">
+              <div class="title">${escapeHtml(template.exam)}</div>
+              <div class="sub">${escapeHtml(template.school)} â€¢ ${escapeHtml(template.year)}</div>
+            </div>
+            <div style="text-align:right; font-size:9px; opacity:.95; white-space:nowrap">Kartu Ujian</div>
+          </div>
+          <div class="body">
+            ${photoHtml}
+            <div class="info">
+              <div>
+                <div class="name">${escapeHtml(data.name)}</div>
+                <div class="line"><div class="label">ID</div><div class="value">${escapeHtml(data.idno)}</div></div>
+                <div class="line"><div class="label">Kelas</div><div class="value">${escapeHtml(data.class)}</div></div>
+                <div class="line"><div class="label">Ruang</div><div class="value">${escapeHtml(data.room)}</div></div>
+                <div class="line"><div class="label">Sesi</div><div class="value">${escapeHtml(data.session)}</div></div>
+                <div class="line"><div class="label">No Duduk</div><div class="value">${escapeHtml(data.seat)}</div></div>
+              </div>
+              <div class="foot">
+                <div class="stamp">
+                  <span>${escapeHtml(data.sigLabel)}</span>
+                  <span class="sigName">${escapeHtml(data.principal)}</span>
+                  <span class="sigNip">NIP. ${escapeHtml(data.nip)}</span>
+                </div>
+                ${template.showQr ? `<div class="qr" data-qr="1" data-qrtext="${escapeHtml(makeQrText(student))}"></div>` : `<div style="display:none"></div>`}
+              </div>
+            </div>
+          </div>
+        </div>
+      `.trim();
+    }
+
+    function renderQR(container){
+      const qrBoxes = container.querySelectorAll("[data-qr='1']");
+      qrBoxes.forEach(box => {
+        const text = box.getAttribute("data-qrtext") || "";
+        box.innerHTML = "";
+        const w = Math.max(32, Math.min(256, box.clientWidth || 70));
+        const h = Math.max(32, Math.min(256, box.clientHeight || 70));
+        // QRCode will inject canvas/img into the element
+        new QRCode(box, {
+          text,
+          width: Math.min(w, h),
+          height: Math.min(w, h),
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      });
+    }
+
+    function renderMiniPreview(){
+      // Buat contoh kartu dari peserta pertama atau dummy
+      const s = students[0] || { id:"demo", name:"Nama Contoh", idno:"0000000000", class:"9A", room:"03", session:"1", seat:"12", photo:"" };
+      miniPreview.innerHTML = `
+        <div style="display:flex; justify-content:center">
+          <div style="${cardStyleVars()}">${buildCardHTML(s)}</div>
+        </div>
+      `;
+      renderQR(miniPreview);
+    }
+
+    function sortStudents(list){
+      const mode = p_sort.value;
+      const arr = [...list];
+      arr.sort((a,b) => {
+        if(mode === "seat"){
+          return (toNumberOrZero(a.seat) - toNumberOrZero(b.seat));
+        }
+        const va = String(a[mode] ?? "").toLowerCase();
+        const vb = String(b[mode] ?? "").toLowerCase();
+        return va.localeCompare(vb, "id");
+      });
+      return arr;
+    }
+
+    // ===== Seating Plan =====
+    let seating = loadSeating();
+    let activeSeatIndex = -1;
+
+    function seatKey(room){
+      return sanitizeText(room || "");
+    }
+
+    function getRoomOptions(){
+      const rooms = [...new Set(students.map(s => sanitizeText(s.room)).filter(Boolean))].sort((a,b) => a.localeCompare(b, "id"));
+      return rooms.length ? rooms : ["-"];
+    }
+
+    function getSeatingConfig(room){
+      const key = seatKey(room);
+      const cfg = seating[key] || { rows: 4, cols: 7, map: {} };
+      cfg.rows = Math.max(1, Math.min(30, toNumberOrZero(cfg.rows) || 4));
+      cfg.cols = Math.max(1, Math.min(30, toNumberOrZero(cfg.cols) || 7));
+      cfg.map = cfg.map && typeof cfg.map === "object" ? cfg.map : {};
+      seating[key] = cfg;
+      return cfg;
+    }
+
+    function setSeatingConfig(room, cfg){
+      seating[seatKey(room)] = cfg;
+      saveSeating();
+    }
+
+    function renderSeatingUI(syncInputs = true){
+      const rooms = getRoomOptions();
+      const current = seat_room.value && rooms.includes(seat_room.value) ? seat_room.value : rooms[0];
+      seat_room.innerHTML = rooms.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join("");
+      seat_room.value = current;
+
+      const sessionOptions = getRoomSessionOptions(current);
+      const currentSession = seat_session.value && (seat_session.value === "__all__" || sessionOptions.includes(seat_session.value))
+        ? seat_session.value
+        : (sessionOptions[0] || "__all__");
+      seat_session.innerHTML = `
+        <option value="__all__">Semua sesi</option>
+        ${sessionOptions.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("")}
+      `;
+      seat_session.value = currentSession;
+
+      const cfg = getSeatingConfig(current);
+      if(syncInputs){
+        seat_rows.value = cfg.rows;
+        seat_cols.value = cfg.cols;
+        if(!seat_gap.value) seat_gap.value = "8";
+        if(!seat_height.value) seat_height.value = "70";
+        if(!seat_order.value) seat_order.value = "left";
+      }
+
+      // Update board and teacher text
+      const seatBoardText = document.getElementById("seatBoardText");
+      const seatTeacherText = document.getElementById("seatTeacherText");
+      if(seatBoardText) seatBoardText.textContent = template.boardText || "PAPAN TULIS";
+      if(seatTeacherText) seatTeacherText.textContent = template.teacherText || "MEJA GURU";
+
+      renderSeatStudentSelect(current, cfg, currentSession);
+      renderSeatGrid(current, cfg, currentSession);
+    }
+
+    function seatResizeFromInputs(){
+      const room = seat_room.value;
+      const cfg = getSeatingConfig(room);
+      cfg.rows = Math.max(1, Math.min(30, toNumberOrZero(seat_rows.value) || cfg.rows));
+      cfg.cols = Math.max(1, Math.min(30, toNumberOrZero(seat_cols.value) || cfg.cols));
+      setSeatingConfig(room, cfg);
+      renderSeatStudentSelect(room, cfg, seat_session.value);
+      renderSeatGrid(room, cfg, seat_session.value);
+    }
+
+    function renderSeatStudentSelect(room, cfg, session){
+      const list = getFilteredRoomStudents(room, session === "__all__" ? "" : session, seat_order.value || "left");
+      const sorted = [...list].sort((a,b) => toNumberOrZero(a.seat) - toNumberOrZero(b.seat));
+      seat_student.innerHTML = `
+        <option value="">(Kosong)</option>
+        ${sorted.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.seat ? ("#"+s.seat+" ") : "")}${escapeHtml(s.name)} (${escapeHtml(s.idno)})</option>`).join("")}
+      `;
+
+      const assignedCount = Object.keys(cfg.map || {}).length;
+      seatInfo.textContent = `Ruangan: ${room} | Sesi: ${session === "__all__" ? "Semua" : session} | ${sorted.length} peserta | ${cfg.rows}x${cfg.cols} kursi | ${assignedCount} terisi`;
+    }
+
+    function getAssignedStudent(room, cfg, index){
+      const sid = cfg.map?.[String(index)] || "";
+      if(!sid) return null;
+      return students.find(s => s.id === sid) || null;
+    }
+
+    function getRoomSessionOptions(room){
+      const sessions = [...new Set(
+        students
+          .filter(s => sanitizeText(s.room) === sanitizeText(room) && sanitizeText(s.session))
+          .map(s => sanitizeText(s.session))
+      )].sort((a,b) => a.localeCompare(b, "id"));
+      return sessions;
+    }
+
+    function getFilteredRoomStudents(room, session, orderMode = "left"){
+      const list = students
+        .filter(s => {
+          const sameRoom = sanitizeText(s.room) === sanitizeText(room);
+          const sameSession = !sanitizeText(session) || sanitizeText(s.session) === sanitizeText(session);
+          return sameRoom && sameSession;
+        })
+        .sort((a,b) => {
+          const ao = Number(a.order ?? 0);
+          const bo = Number(b.order ?? 0);
+          if(ao !== bo) return ao - bo;
+          const as = toNumberOrZero(a.seat);
+          const bs = toNumberOrZero(b.seat);
+          if(as !== bs) return as - bs;
+          return String(a.name || "").localeCompare(String(b.name || ""), "id");
+        });
+
+      if(orderMode === "right"){
+        return [...list].reverse();
+      }
+      if(orderMode === "random"){
+        return [...list]
+          .map(v => ({ v, k: Math.random() }))
+          .sort((a,b) => a.k - b.k)
+          .map(x => x.v);
+      }
+      return list;
+    }
+
+    function getRoomSessionText(room){
+      const sessions = [...new Set(
+        students
+          .filter(s => sanitizeText(s.room) === sanitizeText(room) && sanitizeText(s.session))
+          .map(s => sanitizeText(s.session))
+      )].sort((a,b) => a.localeCompare(b, "id"));
+      if(sessions.length === 0) return "-";
+      if(sessions.length === 1) return sessions[0];
+      return sessions.join(", ");
+    }
+
+    function setActiveSeat(index){
+      activeSeatIndex = index;
+      seat_selected.value = index >= 0 ? `Kursi ${index+1}` : "";
+      [...seatGrid.querySelectorAll(".seatCell")].forEach(el => {
+        el.classList.toggle("active", Number(el.getAttribute("data-index")) === index);
+      });
+    }
+
+    function renderSeatGrid(room, cfg, session){
+      const cols = Math.max(1, toNumberOrZero(seat_cols.value) || cfg.cols);
+      const rows = Math.max(1, toNumberOrZero(seat_rows.value) || cfg.rows);
+      cfg.cols = cols;
+      cfg.rows = rows;
+      setSeatingConfig(room, cfg);
+
+      seatGrid.style.gridTemplateColumns = `repeat(${cols}, 120px)`;
+      seatGrid.style.gap = `${getSeatGapMm()}px`;
+      seatGrid.style.setProperty("--seatCellH", `${getSeatHeightPx()}px`);
+
+      const total = rows * cols;
+      const cells = [];
+      for(let i=0; i<total; i++){
+        const st = getAssignedStudent(room, cfg, i);
+        const name = st ? st.name : "(kosong)";
+        const meta = st ? `${st.idno}${st.seat ? " â€¢ No " + st.seat : ""}` : "Klik untuk isi";
+        cells.push(`
+          <div class="seatCell" data-index="${i}">
+            <div class="seatNo">Kursi ${i+1}</div>
+            <div class="seatName">${escapeHtml(name)}</div>
+            <div class="seatMeta">${escapeHtml(meta)}</div>
+          </div>
+        `);
+      }
+      seatGrid.innerHTML = cells.join("");
+
+      setActiveSeat(Math.min(activeSeatIndex, total-1));
+    }
+
+    seatGrid.addEventListener("click", (e) => {
+      const cell = e.target?.closest?.(".seatCell");
+      if(!cell) return;
+      const idx = Number(cell.getAttribute("data-index"));
+      setActiveSeat(Number.isFinite(idx) ? idx : -1);
+
+      const room = seat_room.value;
+      const cfg = getSeatingConfig(room);
+      const st = getAssignedStudent(room, cfg, activeSeatIndex);
+      seat_student.value = st?.id || "";
+    });
+
+    function seatAssignSelected(){
+      const room = seat_room.value;
+      const cfg = getSeatingConfig(room);
+      if(activeSeatIndex < 0){
+        showToast("Pilih kursi terlebih dahulu.", "warning");
+        return;
+      }
+      const sid = seat_student.value || "";
+      if(!sid){
+        delete cfg.map[String(activeSeatIndex)];
+      }else{
+        cfg.map[String(activeSeatIndex)] = sid;
+      }
+      setSeatingConfig(room, cfg);
+      renderSeatingUI();
+      setActiveSeat(activeSeatIndex);
+    }
+
+    function seatUnassignSelected(){
+      seat_student.value = "";
+      seatAssignSelected();
+    }
+
+    function seatAutoFill(){
+      const room = seat_room.value;
+      const cfg = getSeatingConfig(room);
+      const cols = Math.max(1, toNumberOrZero(seat_cols.value) || cfg.cols);
+      const rows = Math.max(1, toNumberOrZero(seat_rows.value) || cfg.rows);
+      cfg.cols = cols;
+      cfg.rows = rows;
+
+      const sorted = getFilteredRoomStudents(room, seat_session.value === "__all__" ? "" : seat_session.value, seat_order.value || "left");
+      const total = rows * cols;
+      cfg.map = {};
+      for(let i=0; i<Math.min(total, sorted.length); i++){
+        cfg.map[String(i)] = sorted[i].id;
+      }
+      setSeatingConfig(room, cfg);
+      renderSeatingUI();
+    }
+
+    function seatAutoNext(){
+      const room = seat_room.value;
+      const cfg = getSeatingConfig(room);
+      const cols = Math.max(1, toNumberOrZero(seat_cols.value) || cfg.cols);
+      const rows = Math.max(1, toNumberOrZero(seat_rows.value) || cfg.rows);
+      cfg.cols = cols;
+      cfg.rows = rows;
+
+      const sorted = getFilteredRoomStudents(room, seat_session.value === "__all__" ? "" : seat_session.value, seat_order.value || "left");
+      const total = rows * cols;
+      const map = {};
+      for(let i=0; i<Math.min(total, sorted.length); i++){
+        map[String(i)] = sorted[i].id;
+      }
+      cfg.map = map;
+      setSeatingConfig(room, cfg);
+      renderSeatingUI();
+      showToast("Denah diisi otomatis sesuai urutan data.");
+    }
+
+    function seatClear(){
+      const room = seat_room.value;
+      const cfg = getSeatingConfig(room);
+      if(!confirm("Kosongkan semua kursi pada ruangan ini?")) return;
+      cfg.map = {};
+      setSeatingConfig(room, cfg);
+      renderSeatingUI();
+    }
+
+    function renderSeatingPrint(){
+      const room = seat_room.value;
+      const session = seat_session.value;
+      const cfg = getSeatingConfig(room);
+      const cols = Math.max(1, toNumberOrZero(seat_cols.value) || cfg.cols);
+      const rows = Math.max(1, toNumberOrZero(seat_rows.value) || cfg.rows);
+      const total = rows * cols;
+      const gridStyle = `grid-template-columns: repeat(${cols}, 1fr); --seatGapPrint: ${getSeatGapMm()}mm; --seatCellHPrint: ${getSeatHeightMm()}mm;`;
+
+      const cells = [];
+      for(let i=0; i<total; i++){
+        const st = getAssignedStudent(room, cfg, i);
+        const name = st ? st.name : "";
+        const meta = st ? `${st.idno}${st.class ? " | " + st.class : ""}${st.seat ? " | No " + st.seat : ""}` : "";
+        cells.push(`
+          <div class="seatCellPrint">
+            <div class="seatNo">Kursi ${i+1}</div>
+            <div class="seatName">${escapeHtml(name || "-")}</div>
+            <div class="seatMeta">${escapeHtml(meta || "")}</div>
+          </div>
+        `);
+      }
+
+      printRoot.innerHTML = `
+        <div class="seatSheet">
+          <div class="seatHeader">
+            <div>
+              <h3>Denah Duduk Ujian</h3>
+              <div class="sub">${escapeHtml(template.school)} | ${escapeHtml(template.exam)} | ${escapeHtml(template.year)}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="sub">Ruangan: <b>${escapeHtml(room)}</b></div>
+              <div class="sub">Sesi: <b>${escapeHtml(session === "__all__" ? "Semua" : session)}</b></div>
+              <div class="sub">Grid: ${rows}x${cols}</div>
+            </div>
+          </div>
+          <div class="seatFrontPrint">
+            <div class="seatBoardPrint">${escapeHtml(template.boardText || "PAPAN TULIS")}</div>
+            <div class="seatTeacherPrint">${escapeHtml(template.teacherText || "MEJA GURU")}</div>
+          </div>
+          <div class="seatGridPrint" style="${gridStyle}">
+            ${cells.join("")}
+          </div>
+        </div>
+      `.trim();
+    }
+
+    async function doPrintSeating(){
+      setPageOrientation(getSeatOrientation());
+      renderSeatingPrint();
+      await new Promise(r => setTimeout(r, 50));
+      window.print();
+    }
+
+    function layoutToGrid(layout){
+      // 1,2,4,8 per page A4
+      switch(String(layout)){
+        case "1": return { cols: 1, rows: 1 };
+        case "2": return { cols: 1, rows: 2 };
+        case "4": return { cols: 2, rows: 2 };
+        case "8": return { cols: 2, rows: 4 };
+        default:  return { cols: 2, rows: 2 };
+      }
+    }
+
+    function renderFullPreview(){
+      const layout = p_layout.value;
+      const { cols } = layoutToGrid(layout);
+      const list = sortStudents(students);
+
+      metaInfo.textContent = `${list.length} kartu â€¢ layout ${layout}/halaman â€¢ ukuran kartu ${template.wMm}Ã—${template.hMm}mm`;
+
+      if(list.length === 0){
+        previewArea.innerHTML = `<div class="muted">Belum ada data peserta. Tambahkan data dulu di tab â€œData Pesertaâ€.</div>`;
+        return;
+      }
+
+      // Bangun halaman A4, paging berdasarkan layout
+      const perPage = Number(layout);
+      const pages = [];
+      for(let i=0; i<list.length; i+=perPage){
+        pages.push(list.slice(i, i+perPage));
+      }
+
+      const pageHtml = pages.map((pageItems, idx) => {
+        const gridStyle = `grid-template-columns: repeat(${cols}, max-content); justify-content: center;`;
+        return `
+          <div class="sheet" style="margin-bottom: 10mm;">
+            <div class="cardsGrid" style="${gridStyle}">
+              ${pageItems.map(s => `
+                <div style="${cardStyleVars()}">${buildCardHTML(s)}</div>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      previewArea.innerHTML = pageHtml;
+      renderQR(previewArea);
+
+      // also build printRoot for print mode
+      printRoot.innerHTML = previewArea.innerHTML;
+      renderQR(printRoot);
+    }
+
+    // ===== Export PDF & Print =====
+    async function doPrint(){
+      syncPrintPageStyle();
+      renderFullPreview();
+      await new Promise(r => setTimeout(r, 50));
+      window.print();
+    }
+
+    async function exportPDF(){
+      syncPrintPageStyle();
+      renderFullPreview();
+      const element = previewArea; // export what you see
+      const filename = `Kartu_Ujian_${(template.school || "Sekolah").replace(/\s+/g,"_")}_${new Date().toISOString().slice(0,10)}.pdf`;
+      const orientation = p_orientation.value === "landscape" ? "landscape" : "portrait";
+
+      const opt = {
+        margin: 0,
+        filename,
+        image: { type: "jpeg", quality: 0.95 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+        jsPDF: { unit: "mm", format: "a4", orientation }
+      };
+
+      // Wait a moment so QR canvas is rendered
+      await new Promise(r => setTimeout(r, 150));
+      html2pdf().set(opt).from(element).save();
+    }
+
+    // ===== Backup JSON =====
+    function exportJson(){
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        template,
+        students
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `backup_kartu_ujian_${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 500);
+    }
+
+    async function importJsonFile(file){
+      const text = await file.text();
+      let payload;
+      try{ payload = JSON.parse(text); }catch{ alert("File JSON tidak valid."); return; }
+
+      if(payload.template) template = { ...structuredClone(DEFAULT_TEMPLATE), ...payload.template };
+      if(Array.isArray(payload.students)) students = payload.students;
+
+      saveTemplate();
+      saveStudents();
+      bindTemplateToUI();
+      renderTable();
+      renderMiniPreview();
+      showToast("Import JSON berhasil.");
+    }
+
+    function downloadXlsxTemplate(){
+      if(!window.XLSX){
+        alert("Library XLSX belum siap. Coba refresh halaman.");
+        return;
+      }
+
+      const headers = ["Nama", "ID", "Kelas", "Ruang", "Sesi", "No Duduk", "Foto"];
+      const example = ["Siti Nurhaliza", "0051234567", "9A", "03", "1", "12", "https://... (opsional)"];
+      const aoa = [headers, example];
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Peserta");
+      const filename = `template_kartu_ujian_${new Date().toISOString().slice(0,10)}.xlsx`;
+      XLSX.writeFile(wb, filename);
+    }
+
+    async function importXlsxFile(file){
+      if(!window.XLSX){
+        alert("Library XLSX belum siap. Coba refresh halaman.");
+        return;
+      }
+
+      const arrayBuffer = await new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result);
+        fr.onerror = reject;
+        fr.readAsArrayBuffer(file);
+      });
+
+      let wb;
+      try{
+        wb = XLSX.read(arrayBuffer, { type: "array" });
+      }catch(e){
+        alert("Gagal membaca XLSX: " + (e?.message || e));
+        return;
+      }
+
+      const firstSheetName = wb.SheetNames?.[0];
+      if(!firstSheetName){
+        alert("XLSX tidak memiliki sheet.");
+        return;
+      }
+
+      const ws = wb.Sheets[firstSheetName];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+      if(!Array.isArray(rows) || rows.length < 2){
+        alert("XLSX kosong. Minimal harus ada header dan 1 baris data.");
+        return;
+      }
+
+      const headerRow = rows[0].map(normalizeHeader);
+      const idx = {
+        name: headerRow.findIndex(h => ["nama", "name"].includes(h)),
+        idno: headerRow.findIndex(h => ["id", "nisn", "nim", "idno", "nomor", "no", "no id"].includes(h)),
+        klass: headerRow.findIndex(h => ["kelas", "class"].includes(h)),
+        room: headerRow.findIndex(h => ["ruang", "room"].includes(h)),
+        session: headerRow.findIndex(h => ["sesi", "session"].includes(h)),
+        seat: headerRow.findIndex(h => ["no duduk", "noduduk", "nomor duduk", "seat", "no seat"].includes(h)),
+        photo: headerRow.findIndex(h => ["foto", "photo", "photourl", "url foto", "foto url"].includes(h)),
+      };
+
+      if(idx.name < 0 || idx.idno < 0){
+        alert("Kolom wajib tidak ditemukan. Pastikan ada kolom 'Nama' dan 'ID'.");
+        return;
+      }
+
+      const imported = [];
+      for(let r=1; r<rows.length; r++){
+        const row = rows[r];
+        if(!row || row.every(c => String(c ?? "").trim() === "")) continue;
+
+        const name = cellToText(row[idx.name]);
+        const idno = cellToText(row[idx.idno]);
+        if(!name || !idno) continue;
+
+        const klass = idx.klass >= 0 ? cellToText(row[idx.klass]) : "";
+        const room = idx.room >= 0 ? cellToText(row[idx.room]) : "";
+        const session = idx.session >= 0 ? cellToText(row[idx.session]) : "";
+        const seat = idx.seat >= 0 ? cellToText(row[idx.seat]) : "";
+        const photo = idx.photo >= 0 ? cellToText(row[idx.photo]) : "";
+
+        imported.push({ id: uid(), name, idno, class: klass, room, session, seat, photo, order: Date.now() + r });
+      }
+
+      if(imported.length === 0){
+        alert("Tidak ada baris valid yang bisa diimport. Pastikan 'Nama' dan 'ID' terisi.");
+        return;
+      }
+
+      const replace = confirm(`Ditemukan ${imported.length} peserta dari XLSX.\n\nKlik OK untuk REPLACE semua data lama.\nKlik Cancel untuk GABUNG (append).`);
+      students = replace ? imported : [...imported, ...students];
+      saveStudents();
+      renderTable();
+      renderMiniPreview();
+      showToast("Import XLSX berhasil.");
+    }
+
+    // ===== Events =====
+    btnAdd.addEventListener("click", addOrUpdate);
+    document.getElementById("btnResetForm").addEventListener("click", resetForm);
+    document.getElementById("btnClearAll").addEventListener("click", () => {
+      if(!confirm("Hapus SEMUA data peserta?")) return;
+      students = [];
+      saveStudents();
+      renderTable();
+      renderMiniPreview();
+      showToast("Semua data peserta dihapus.");
+    });
+    search.addEventListener("input", renderTable);
+
+    document.getElementById("btnSaveTemplate").addEventListener("click", saveTemplateAction);
+    document.getElementById("btnResetTemplate").addEventListener("click", resetTemplate);
+
+    document.getElementById("btnRefreshPreview").addEventListener("click", renderFullPreview);
+    document.getElementById("btnPrint").addEventListener("click", doPrint);
+    document.getElementById("btnPdf").addEventListener("click", exportPDF);
+    p_layout.addEventListener("change", renderFullPreview);
+    p_orientation.addEventListener("change", () => {
+      syncPrintPageStyle();
+      renderFullPreview();
+    });
+    p_sort.addEventListener("change", renderFullPreview);
+
+    document.getElementById("btnExportJson").addEventListener("click", exportJson);
+    document.getElementById("importJson").addEventListener("change", async (e) => {
+      const f = e.target.files?.[0];
+      if(!f) return;
+      await importJsonFile(f);
+      e.target.value = "";
+    });
+
+    document.getElementById("btnExportXlsxTemplate").addEventListener("click", downloadXlsxTemplate);
+    document.getElementById("importXlsx").addEventListener("change", async (e) => {
+      const f = e.target.files?.[0];
+      if(!f) return;
+      await importXlsxFile(f);
+      e.target.value = "";
+    });
+
+    document.getElementById("btnSeatRefresh").addEventListener("click", () => renderSeatingUI(true));
+    document.getElementById("btnSeatAuto").addEventListener("click", seatAutoFill);
+    document.getElementById("btnSeatClear").addEventListener("click", seatClear);
+    document.getElementById("btnSeatPrint").addEventListener("click", doPrintSeating);
+    document.getElementById("btnSeatAssign").addEventListener("click", seatAssignSelected);
+    document.getElementById("btnSeatUnassign").addEventListener("click", seatUnassignSelected);
+    document.getElementById("btnSeatAutoNext").addEventListener("click", seatAutoNext);
+    seat_room.addEventListener("change", () => { activeSeatIndex = -1; renderSeatingUI(true); });
+    seat_session.addEventListener("change", () => { activeSeatIndex = -1; renderSeatingUI(true); });
+    seat_rows.addEventListener("change", seatResizeFromInputs);
+    seat_cols.addEventListener("change", seatResizeFromInputs);
+    seat_gap.addEventListener("change", () => renderSeatingUI(false));
+    seat_height.addEventListener("change", () => renderSeatingUI(false));
+    seat_orientation.addEventListener("change", () => setPageOrientation(getSeatOrientation()));
+    seat_order.addEventListener("change", () => renderSeatingUI(false));
+    [in_name,in_idno,in_class,in_room,in_session,in_seat,in_photoUrl].forEach(el => {
+      el.addEventListener("keydown", (e) => {
+        if(e.key === "Enter"){
+          e.preventDefault();
+          addOrUpdate();
+        }
+      });
+    });
+    document.addEventListener("keydown", (e) => {
+      if(e.ctrlKey && e.key === "Enter"){
+        const current = localStorage.getItem(KEY_ACTIVE_TAB) || "data";
+        if(current === "data"){
+          e.preventDefault();
+          addOrUpdate();
+        }
+      }
+      if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s"){
+        const current = localStorage.getItem(KEY_ACTIVE_TAB) || "data";
+        if(current === "template"){
+          e.preventDefault();
+          saveTemplateAction();
+        }
+      }
+    });
+
+    // ===== Init =====
+    bindTemplateToUI();
+    syncPrintPageStyle();
+    if(seat_gap && !seat_gap.value) seat_gap.value = "8";
+    if(seat_height && !seat_height.value) seat_height.value = "70";
+    if(seat_order && !seat_order.value) seat_order.value = "left";
+    setPageOrientation(getSeatOrientation());
+    renderTable();
+    renderMiniPreview();
+    const savedTab = localStorage.getItem(KEY_ACTIVE_TAB);
+    showTab(["data","template","preview","seating"].includes(savedTab) ? savedTab : "data");
+  </script>
+</body>
+</html>
