@@ -39,12 +39,28 @@
       color:var(--text);
     }
     a{color:inherit}
-    .wrap{max-width:1100px;margin:0 auto;padding:20px}
+    .wrap{max-width:1480px;margin:0 auto;padding:20px}
     .topbar{
       display:flex; gap:14px; align-items:center; justify-content:space-between;
-      padding:14px 16px; background:var(--panel); border:1px solid var(--line);
+      padding:14px 16px; background: rgba(11,18,32,.96); border:1px solid rgba(255,255,255,.12);
       border-radius:var(--radius); box-shadow:var(--shadow);
+      position: sticky;
+      top: 8px;
+      z-index: 1000;
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
     }
+    .topbar.stuck{
+      top: 0;
+      box-shadow:
+        0 20px 48px rgba(0,0,0,.48),
+        0 0 0 1px rgba(255,255,255,.10);
+      background: rgba(8,12,22,.98);
+    }
+    .topbar .brand h1{color:#fff}
+    .topbar .brand p{color:rgba(255,255,255,.72)}
+    .topbar .tab{color:#fff; background: rgba(255,255,255,.04)}
+    .topbar .tab.active{background: rgba(124,58,237,.34); border-color: rgba(124,58,237,.65)}
     .brand{
       display:flex; gap:12px; align-items:center;
     }
@@ -66,6 +82,20 @@
       background: rgba(124,58,237,.18);
       border-color: rgba(124,58,237,.45);
     }
+    @media (max-width: 720px){
+      .wrap{padding:12px}
+      .topbar{
+        top: 6px;
+        padding:10px 12px;
+        gap:10px;
+        border-radius:14px;
+      }
+      .brand{gap:10px}
+      .brand h1{font-size:14px}
+      .brand p{font-size:11px}
+      .tabs{gap:6px}
+      .tab{padding:8px 10px; font-size:12px}
+    }
     .btn{
       border:1px solid var(--line);
       background: var(--panel2);
@@ -81,10 +111,9 @@
     .btn.warn{background: rgba(245,158,11,.18); border-color: rgba(245,158,11,.40)}
     .grid{
       display:grid; gap:14px;
-      grid-template-columns: 1.05fr .95fr;
+      grid-template-columns: minmax(0, 1fr);
       margin-top:14px;
     }
-    @media (max-width: 980px){ .grid{grid-template-columns: 1fr} }
     .card{
       background: var(--panel); border:1px solid var(--line);
       border-radius: var(--radius); box-shadow: var(--shadow);
@@ -105,6 +134,63 @@
     }
     textarea{min-height:120px; font-family: var(--mono); font-size:12px}
     .muted{color:var(--muted); font-size:12px}
+    .sigPreviewBox{
+      min-height: 72px;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      background: rgba(0,0,0,.14);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 10px;
+      overflow:hidden;
+      text-align:center;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .sigPreviewBox img{
+      max-width: 100%;
+      max-height: 52px;
+      object-fit: contain;
+      display:block;
+    }
+    .logoPreviewBox{
+      min-height: 60px;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      background: rgba(0,0,0,.14);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 10px;
+      overflow:hidden;
+      text-align:center;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .logoPreviewBox img{
+      max-width: 100%;
+      max-height: 42px;
+      object-fit: contain;
+      display:block;
+    }
+    .examCard .cardLogo{
+      width: var(--logoSize, 9mm);
+      height: var(--logoSize, 9mm);
+      flex: 0 0 auto;
+      border-radius: 2mm;
+      overflow:hidden;
+      background: rgba(255,255,255,.18);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .examCard .cardLogo img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      display:block;
+    }
     .hr{height:1px; background: var(--line); margin:12px 0}
     table{width:100%; border-collapse:collapse; overflow:hidden; border-radius:12px}
     th, td{padding:10px 10px; border-bottom:1px solid var(--line); font-size:13px; vertical-align:top}
@@ -241,6 +327,26 @@
     /* ===== KARTU (Preview) ===== */
     .previewTools{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between}
     .previewTools .left, .previewTools .right{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .previewChecks{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin: 10px 0 0;
+    }
+    .previewChecks .checkItem{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background: rgba(255,255,255,.04);
+      font-size:12px;
+      color: var(--text);
+      user-select:none;
+    }
+    .previewChecks input{width:auto; accent-color: var(--accent)}
 
     /* Area print (A4) */
     .paper{
@@ -321,8 +427,8 @@
       overflow:hidden;
     }
     .examCard .photo{
-      width: 17mm;
-      height: 23mm;
+      width: 21mm;
+      height: 25mm;
       border: 1px solid rgba(0,0,0,.25);
       border-radius: 6px;
       overflow:hidden;
@@ -381,11 +487,46 @@
       min-width: 0;
       max-width: calc(100% - 18mm);
       line-height: 1.1;
-      display:flex;
-      flex-direction:column;
-      justify-content:flex-start;
-      gap: .5mm;
+      display:grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 10mm auto auto;
+      row-gap: 0;
+      align-items:start;
       min-height: 18mm;
+    }
+    .examCard .stamp .sigLabel{
+      display:block;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .examCard .stamp .sigBlock{
+      grid-row: 2;
+      width: 100%;
+      height: 10mm;
+      padding: 0;
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      border: 0;
+      background: transparent;
+      border-radius: 0;
+      overflow:hidden;
+    }
+    .examCard .stamp .sigImage{
+      display:flex;
+      align-items:flex-end;
+      justify-content:flex-start;
+      width: 100%;
+      height: 10mm;
+    }
+    .examCard .stamp .sigImage img{
+      max-width: 100%;
+      max-height: 10mm;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display:block;
     }
     .examCard .stamp .sigSpace{
       display:block;
@@ -394,26 +535,28 @@
     }
     .examCard .stamp .sigName,
     .examCard .stamp .sigNip{
+      position:static;
       display:block;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
+      margin:0;
+      padding:0;
+      line-height:1;
     }
     .examCard .stamp .sigName{
-      font-weight:700;
-      padding-top: 40px;
-      margin-bottom: 0;
-      border-bottom: 1px dashed rgba(0,0,0,.35);
+      grid-row: 3;
+      font-weight:500;
+      border-bottom: 0px dashed rgba(0,0,0,0);
     }
     .examCard .stamp .sigNip{
-      margin-top: 0;
+      grid-row: 4;
       font-size: 6px;
-      line-height: 1;
     }
     .examCard .qr{
       width: 16mm; height: 16mm;
-      border: 1px solid rgba(0,0,0,.20);
-      border-radius: 6px;
+      border: 1px solid rgba(0,0,0,0);
+      border-radius: 2px;
       overflow:hidden;
       display:flex; align-items:center; justify-content:center;
       align-self: flex-start;
@@ -445,17 +588,23 @@
         print-color-adjust: exact;
       }
       .examCard{
-        border: 2px solid #000 !important;
+        border: 1px solid #000 !important;
         background:#fff !important;
       }
       .examCard .bar{
-        background:#fff !important;
+        background: var(--cardPrimary, #4f46e5) !important;
         border-bottom: 1px solid #000 !important;
-        color:#000 !important;
+        color:#fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .examCard .bar *{
+        color:#fff !important;
       }
       .examCard .photo,
       .examCard .qr,
       .examCard .stamp .sigName,
+      .examCard .stamp .sigImage,
       .examCard .line .label,
       .examCard .line .value{
         color:#000 !important;
@@ -464,7 +613,7 @@
       .examCard .photo,
       .examCard .qr,
       .examCard .stamp .sigName{
-        border: 1px solid #000 !important;
+        border: 0px solid #000 !important;
       }
       .examCard .stamp .sigName{
         border-bottom: 1px dashed #000 !important;
@@ -492,7 +641,7 @@
         <div class="logo" aria-hidden="true"></div>
         <div>
           <h1>Aplikasi Kartu Ujian (Custom Template)</h1>
-          <p>Input data â†’ atur template â†’ preview â†’ print / PDF</p>
+          <p>Input data -> atur template -> preview -> print / PDF</p>
         </div>
       </div>
       <div class="tabs">
@@ -515,8 +664,15 @@
             <input id="in_name" placeholder="Contoh: Siti Nurhaliza" />
           </div>
           <div>
-            <label>NISN / NIM / ID *</label>
+            <label>No Peserta *</label>
             <input id="in_idno" placeholder="Contoh: 0051234567" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div style="grid-column:1/-1">
+            <label>NISN / NIM / ID</label>
+            <input id="in_nisnId" placeholder="Contoh: 1234567890" />
           </div>
         </div>
 
@@ -593,7 +749,8 @@
             <thead>
               <tr>
                 <th>Nama</th>
-                <th>ID</th>
+                <th>No Peserta</th>
+                <th>NISN/NIM/ID</th>
                 <th>Kelas</th>
                 <th>Ruang</th>
                 <th>Sesi</th>
@@ -658,6 +815,46 @@
 
         <div class="row" style="margin-top:10px">
           <div>
+            <label>Upload Tanda Tangan</label>
+            <input id="t_signatureFile" type="file" accept="image/*" />
+            <div class="muted">Disarankan PNG transparan atau JPG berukuran kecil.</div>
+          </div>
+          <div>
+            <label>Pratinjau Tanda Tangan</label>
+            <div id="t_signaturePreview" class="sigPreviewBox">Belum ada tanda tangan</div>
+          </div>
+        </div>
+
+        <div class="actions" style="margin-top:8px; justify-content:flex-start">
+          <button class="btn" id="t_signatureClear" type="button">Hapus Tanda Tangan</button>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label>Upload Logo Kartu</label>
+            <input id="t_logoFile" type="file" accept="image/*" />
+            <div class="muted">Logo muncul di kiri atas header kartu.</div>
+          </div>
+          <div>
+            <label>Pratinjau Logo</label>
+            <div id="t_logoPreview" class="logoPreviewBox">Belum ada logo</div>
+          </div>
+        </div>
+
+        <div class="actions" style="margin-top:8px; justify-content:flex-start">
+          <button class="btn" id="t_logoClear" type="button">Hapus Logo</button>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div style="grid-column:1/-1">
+            <label>Ukuran Logo (mm)</label>
+            <input id="t_logoSize" type="number" min="4" max="20" step="1" />
+            <div class="muted">Semakin besar angka, semakin besar logo di header kartu.</div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div>
             <label>Teks Papan Tulis</label>
             <input id="t_boardText" placeholder="Contoh: PAPAN TULIS" />
           </div>
@@ -715,7 +912,7 @@
               <option value="simple">Simple (Form)</option>
               <option value="html">Template HTML (Advanced)</option>
             </select>
-            <div class="muted">Mode HTML bebas mengubah layout memakai placeholder: {{school}}, {{exam}}, {{year}}, {{principal}}, {{nip}}, {{name}}, {{idno}}, {{class}}, {{room}}, {{session}}, {{seat}}, {{photo}}, {{qr}}</div>
+        <div class="muted">Mode HTML bebas mengubah layout memakai placeholder: {{school}}, {{exam}}, {{year}}, {{principal}}, {{nip}}, {{signature}}, {{logo}}, {{details}}, {{name}}, {{idno}}, {{nisnId}}, {{class}}, {{room}}, {{session}}, {{seat}}, {{photo}}, {{qr}}</div>
           </div>
         </div>
 
@@ -747,7 +944,7 @@
               <option value="1">1 kartu / halaman</option>
               <option value="2">2 kartu / halaman</option>
               <option value="4">4 kartu / halaman</option>
-              <option value="8">8 kartu / halaman</option>
+              <option value="8" selected>8 kartu / halaman</option>
             </select>
 
             <span class="pill">Orientasi</span>
@@ -770,6 +967,14 @@
             <button class="btn green" id="btnPrint">Print</button>
             <button class="btn primary" id="btnPdf">Export PDF</button>
           </div>
+        </div>
+
+        <div class="previewChecks" aria-label="Tampilkan item kartu">
+          <label class="checkItem"><input id="chkShowIdno" type="checkbox" checked /> No Peserta</label>
+          <label class="checkItem"><input id="chkShowClass" type="checkbox" checked /> Kelas</label>
+          <label class="checkItem"><input id="chkShowRoom" type="checkbox" checked /> Ruang</label>
+          <label class="checkItem"><input id="chkShowSession" type="checkbox" checked /> Sesi</label>
+          <label class="checkItem"><input id="chkShowSeat" type="checkbox" checked /> No Duduk</label>
         </div>
 
         <div class="hr"></div>
@@ -893,6 +1098,9 @@
       principal: "Kepala Sekolah",
       nip: "-",
       sigLabel: "TTD Kepala Sekolah",
+      signatureImage: "",
+      logoImage: "",
+      logoSizeMm: 9,
       boardText: "PAPAN TULIS",
       teacherText: "MEJA GURU",
       wMm: 95,
@@ -902,14 +1110,22 @@
       font: "Arial",
       showPhoto: true,
       showQr: true,
+      showIdno: true,
+      showClass: true,
+      showRoom: true,
+      showSession: true,
+      showSeat: true,
       html: `
 <div class="examCard">
   <div class="bar">
-    <div style="min-width:0">
-      <div class="title">{{exam}}</div>
-      <div class="sub">{{school}} â€¢ {{year}}</div>
+    <div style="min-width:0; display:flex; align-items:center; gap:8px; flex:1 1 auto">
+      {{logo}}
+      <div style="min-width:0">
+        <div class="title">{{exam}}</div>
+        <div class="sub">{{school}} | {{year}}</div>
+      </div>
     </div>
-    <div style="text-align:right; font-size:9px; opacity:.95; white-space:nowrap">Kartu Ujian</div>
+    <div style="text-align:right; font-size:9px; opacity:.95; white-space:nowrap; flex:0 0 auto">Kartu Ujian</div>
   </div>
 
   <div class="body">
@@ -917,16 +1133,13 @@
     <div class="info">
       <div>
         <div class="name">{{name}}</div>
-        <div class="line"><div class="label">ID</div><div class="value">{{idno}}</div></div>
-        <div class="line"><div class="label">Kelas</div><div class="value">{{class}}</div></div>
-        <div class="line"><div class="label">Ruang</div><div class="value">{{room}}</div></div>
-        <div class="line"><div class="label">Sesi</div><div class="value">{{session}}</div></div>
-        <div class="line"><div class="label">No Duduk</div><div class="value">{{seat}}</div></div>
+        {{details}}
       </div>
 
       <div class="foot">
         <div class="stamp">
           <span>{{sigLabel}}</span>
+          {{signature}}
           <span class="sigName">{{principal}}</span>
           <span class="sigNip">NIP. {{nip}}</span>
         </div>
@@ -947,9 +1160,11 @@
     const panelTemplate = document.getElementById("panel-template");
     const panelPreview = document.getElementById("panel-preview");
     const panelSeating = document.getElementById("panel-seating");
+    const topbar = document.querySelector(".topbar");
 
     const in_name = document.getElementById("in_name");
     const in_idno = document.getElementById("in_idno");
+    const in_nisnId = document.getElementById("in_nisnId");
     const in_class = document.getElementById("in_class");
     const in_room = document.getElementById("in_room");
     const in_session = document.getElementById("in_session");
@@ -971,6 +1186,13 @@
     const t_principal = document.getElementById("t_principal");
     const t_nip = document.getElementById("t_nip");
     const t_sigLabel = document.getElementById("t_sigLabel");
+    const t_signatureFile = document.getElementById("t_signatureFile");
+    const t_signatureClear = document.getElementById("t_signatureClear");
+    const t_signaturePreview = document.getElementById("t_signaturePreview");
+    const t_logoFile = document.getElementById("t_logoFile");
+    const t_logoClear = document.getElementById("t_logoClear");
+    const t_logoPreview = document.getElementById("t_logoPreview");
+    const t_logoSize = document.getElementById("t_logoSize");
     const t_boardText = document.getElementById("t_boardText");
     const t_teacherText = document.getElementById("t_teacherText");
     const t_w = document.getElementById("t_w");
@@ -987,6 +1209,11 @@
     const p_layout = document.getElementById("p_layout");
     const p_orientation = document.getElementById("p_orientation");
     const p_sort = document.getElementById("p_sort");
+    const chkShowIdno = document.getElementById("chkShowIdno");
+    const chkShowClass = document.getElementById("chkShowClass");
+    const chkShowRoom = document.getElementById("chkShowRoom");
+    const chkShowSession = document.getElementById("chkShowSession");
+    const chkShowSeat = document.getElementById("chkShowSeat");
     const previewArea = document.getElementById("previewArea");
     const metaInfo = document.getElementById("metaInfo");
     const printRoot = document.getElementById("printRoot");
@@ -1037,6 +1264,10 @@
 
     function sanitizeText(s){
       return String(s ?? "").replace(/\s+/g, " ").trim();
+    }
+
+    function escapeRegExp(s){
+      return String(s ?? "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     }
 
     function showToast(message, type = "ok"){
@@ -1091,6 +1322,11 @@
       el.classList.toggle("inputError", !!isError);
     }
 
+    function syncTopbarState(){
+      if(!topbar) return;
+      topbar.classList.toggle("stuck", window.scrollY > 8);
+    }
+
     function sanitizeTemplateHTML(html){
       // Basic hardening for advanced template mode.
       // Prevents script injection and common inline-handler vectors.
@@ -1115,6 +1351,175 @@
       });
     }
 
+    async function readImageFileAsScaledDataURL(file, maxW = 900, maxH = 360){
+      const src = await readImageFileAsDataURL(file);
+      const img = new Image();
+      img.decoding = "async";
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = src;
+      });
+
+      const w = img.naturalWidth || img.width || maxW;
+      const h = img.naturalHeight || img.height || maxH;
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, w, h);
+
+      // Trim whitespace so signatures stay visible on the card.
+      const imageData = ctx.getImageData(0, 0, w, h).data;
+      let left = w, top = h, right = -1, bottom = -1;
+      for(let y = 0; y < h; y++){
+        for(let x = 0; x < w; x++){
+          const i = (y * w + x) * 4;
+          const a = imageData[i + 3];
+          const r = imageData[i];
+          const g = imageData[i + 1];
+          const b = imageData[i + 2];
+          const isInk = a > 10 && (a < 245 || ((r + g + b) / 3) < 245);
+          if(!isInk) continue;
+          if(x < left) left = x;
+          if(y < top) top = y;
+          if(x > right) right = x;
+          if(y > bottom) bottom = y;
+        }
+      }
+
+      let sx = 0, sy = 0, sw = w, sh = h;
+      if(right >= left && bottom >= top){
+        const pad = Math.max(6, Math.round(Math.min(w, h) * 0.04));
+        sx = Math.max(0, left - pad);
+        sy = Math.max(0, top - pad);
+        sw = Math.min(w - sx, (right - left + 1) + pad * 2);
+        sh = Math.min(h - sy, (bottom - top + 1) + pad * 2);
+      }
+
+      const scale = Math.min(1, maxW / sw, maxH / sh);
+      const cw = Math.max(1, Math.round(sw * scale));
+      const ch = Math.max(1, Math.round(sh * scale));
+      const out = document.createElement("canvas");
+      out.width = cw;
+      out.height = ch;
+      const outCtx = out.getContext("2d");
+      outCtx.drawImage(canvas, sx, sy, sw, sh, 0, 0, cw, ch);
+
+      // Make near-white background transparent so the signature stands out.
+      const outData = outCtx.getImageData(0, 0, cw, ch);
+      const px = outData.data;
+      for(let i = 0; i < px.length; i += 4){
+        const r = px[i];
+        const g = px[i + 1];
+        const b = px[i + 2];
+        const a = px[i + 3];
+        const avg = (r + g + b) / 3;
+        const isNearWhite = a > 0 && avg > 245 && Math.abs(r - g) < 10 && Math.abs(g - b) < 10;
+        if(isNearWhite) px[i + 3] = 0;
+      }
+      outCtx.putImageData(outData, 0, 0);
+      return out.toDataURL("image/png");
+    }
+
+    function setSignaturePreview(src){
+      if(!t_signaturePreview) return;
+      if(src){
+        t_signaturePreview.innerHTML = `<img src="${escapeHtml(src)}" alt="Pratinjau tanda tangan" />`;
+        return;
+      }
+      t_signaturePreview.textContent = "Belum ada tanda tangan";
+    }
+
+    function setLogoPreview(src){
+      if(!t_logoPreview) return;
+      if(src){
+        t_logoPreview.innerHTML = `<img src="${escapeHtml(src)}" alt="Pratinjau logo" />`;
+        return;
+      }
+      t_logoPreview.textContent = "Belum ada logo";
+    }
+
+    function getSignatureHtml(){
+      if(template.signatureImage){
+        return `<div class="sigImage"><img src="${escapeHtml(template.signatureImage)}" alt="Tanda tangan kepala sekolah" /></div>`;
+      }
+      return "";
+    }
+
+    function getSignatureBlockHtml(){
+      const inner = getSignatureHtml();
+      return inner ? `<div class="sigBlock">${inner}</div>` : "";
+    }
+
+    function getLogoHtml(){
+      if(!template.logoImage) return "";
+      const size = Math.max(4, Math.min(20, Number(template.logoSizeMm) || 9));
+      return `<div class="cardLogo" style="--logoSize:${size}mm"><img src="${escapeHtml(template.logoImage)}" alt="Logo kartu" /></div>`;
+    }
+
+    function injectLogoPlaceholder(html){
+      if(!template.logoImage) return html;
+      if(String(html ?? "").includes("{{logo}}")) return html;
+
+      let out = String(html ?? "");
+      const logoHtml = getLogoHtml();
+
+      const titleBlockPattern = /(<div\b[^>]*class=["'][^"']*\btitle\b[^"']*["'][^>]*>[\s\S]*?<\/div>\s*<div\b[^>]*class=["'][^"']*\bsub\b[^"']*["'][^>]*>[\s\S]*?<\/div>)/i;
+      if(titleBlockPattern.test(out)){
+        return out.replace(titleBlockPattern, `
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:nowrap; min-width:0">
+            ${logoHtml}
+            <div style="min-width:0">$1</div>
+          </div>
+        `);
+      }
+
+      const titleMatch = out.match(/<div\b[^>]*class=["'][^"']*\btitle\b[^"']*["'][^>]*>/i);
+      if(titleMatch && typeof titleMatch.index === "number"){
+        return out.slice(0, titleMatch.index) + logoHtml + out.slice(titleMatch.index);
+      }
+
+      const barMatch = out.match(/<div\b[^>]*class=["'][^"']*\bbar\b[^"']*["'][^>]*>/i);
+      if(barMatch && typeof barMatch.index === "number"){
+        const insertAt = barMatch.index + barMatch[0].length;
+        return out.slice(0, insertAt) + logoHtml + out.slice(insertAt);
+      }
+
+      return out;
+    }
+
+    function buildDetailLines(data){
+      const rows = [];
+      if(template.showIdno !== false) rows.push({ label: "No Peserta", value: data.idno });
+      if(template.showClass !== false) rows.push({ label: "Kelas", value: data.class });
+      if(template.showRoom !== false) rows.push({ label: "Ruang", value: data.room });
+      if(template.showSession !== false) rows.push({ label: "Sesi", value: data.session });
+      if(template.showSeat !== false) rows.push({ label: "No Duduk", value: data.seat });
+      return rows.map(row => `<div class="line"><div class="label">${escapeHtml(row.label)}</div><div class="value">${escapeHtml(row.value || "-")}</div></div>`).join("");
+    }
+
+    function stripHiddenDetailRowsFromHtml(html){
+      const rows = [
+        { show: template.showIdno !== false, label: "No Peserta" },
+        { show: template.showClass !== false, label: "Kelas" },
+        { show: template.showRoom !== false, label: "Ruang" },
+        { show: template.showSession !== false, label: "Sesi" },
+        { show: template.showSeat !== false, label: "No Duduk" },
+      ];
+
+      let out = String(html ?? "");
+      rows.forEach(row => {
+        if(row.show) return;
+        const pattern = new RegExp(
+          `<div class="line">\\s*<div class="label">${escapeRegExp(row.label)}</div>\\s*<div class="value">[\\s\\S]*?<\\/div>\\s*<\\/div>`,
+          "g"
+        );
+        out = out.replace(pattern, "");
+      });
+      return out;
+    }
+
     // ===== Tabs =====
     function showTab(name){
       tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === name));
@@ -1134,6 +1539,7 @@
       setEditingId("");
       in_name.value = "";
       in_idno.value = "";
+      in_nisnId.value = "";
       in_class.value = "";
       in_room.value = "";
       in_session.value = "";
@@ -1153,6 +1559,7 @@
 
       const name = sanitizeText(in_name.value);
       const idno = sanitizeText(in_idno.value);
+      const nisnId = sanitizeText(in_nisnId.value);
       const klass = sanitizeText(in_class.value);
       const room = sanitizeText(in_room.value);
       const session = sanitizeText(in_session.value);
@@ -1179,10 +1586,10 @@
       if(editingId){
         const idx = students.findIndex(s => s.id === editingId);
         if(idx >= 0){
-          students[idx] = { ...students[idx], name, idno, class: klass, room, session, seat, photo, order: students[idx].order ?? Date.now() };
+          students[idx] = { ...students[idx], name, idno, nisnId, class: klass, room, session, seat, photo, order: students[idx].order ?? Date.now() };
         }
       }else{
-        students.unshift({ id: uid(), name, idno, class: klass, room, session, seat, photo, order: Date.now() });
+        students.unshift({ id: uid(), name, idno, nisnId, class: klass, room, session, seat, photo, order: Date.now() });
       }
 
       saveStudents();
@@ -1198,6 +1605,7 @@
       setEditingId(s.id);
       in_name.value = s.name || "";
       in_idno.value = s.idno || "";
+      in_nisnId.value = s.nisnId || "";
       in_class.value = s.class || "";
       in_room.value = s.room || "";
       in_session.value = s.session || "";
@@ -1223,14 +1631,14 @@
     function renderTable(){
       const q = sanitizeText(search.value).toLowerCase();
       const filtered = students.filter(s => {
-        const blob = `${s.name} ${s.idno} ${s.class} ${s.room} ${s.session} ${s.seat}`.toLowerCase();
+        const blob = `${s.name} ${s.idno} ${s.nisnId || ""} ${s.class} ${s.room} ${s.session} ${s.seat}`.toLowerCase();
         return blob.includes(q);
       });
 
       if(filtered.length === 0){
         tbody.innerHTML = `
           <tr>
-            <td colspan="7" class="muted" style="text-align:center; padding:18px">Data tidak ditemukan.</td>
+            <td colspan="8" class="muted" style="text-align:center; padding:18px">Data tidak ditemukan.</td>
           </tr>
         `;
       }else{
@@ -1238,6 +1646,7 @@
         <tr>
           <td>${escapeHtml(s.name)}</td>
           <td>${escapeHtml(s.idno)}</td>
+          <td>${escapeHtml(s.nisnId || "-")}</td>
           <td>${escapeHtml(s.class || "-")}</td>
           <td>${escapeHtml(s.room || "-")}</td>
           <td>${escapeHtml(s.session || "-")}</td>
@@ -1294,6 +1703,11 @@
       t_principal.value = template.principal || "";
       t_nip.value = template.nip || "";
       t_sigLabel.value = template.sigLabel || "";
+      setSignaturePreview(template.signatureImage || "");
+      setLogoPreview(template.logoImage || "");
+      if(t_signatureFile) t_signatureFile.value = "";
+      if(t_logoFile) t_logoFile.value = "";
+      if(t_logoSize) t_logoSize.value = template.logoSizeMm ?? DEFAULT_TEMPLATE.logoSizeMm;
       t_boardText.value = template.boardText || DEFAULT_TEMPLATE.boardText;
       t_teacherText.value = template.teacherText || DEFAULT_TEMPLATE.teacherText;
       t_w.value = template.wMm;
@@ -1302,6 +1716,11 @@
       t_bg.value = template.bg;
       t_showPhoto.value = template.showPhoto ? "1" : "0";
       t_showQr.value = template.showQr ? "1" : "0";
+      if(chkShowIdno) chkShowIdno.checked = template.showIdno !== false;
+      if(chkShowClass) chkShowClass.checked = template.showClass !== false;
+      if(chkShowRoom) chkShowRoom.checked = template.showRoom !== false;
+      if(chkShowSession) chkShowSession.checked = template.showSession !== false;
+      if(chkShowSeat) chkShowSeat.checked = template.showSeat !== false;
       t_mode.value = template.mode;
       t_html.value = template.html;
 
@@ -1319,6 +1738,7 @@
       template.sigLabel = sanitizeText(t_sigLabel.value) || DEFAULT_TEMPLATE.sigLabel;
       template.boardText = sanitizeText(t_boardText.value) || DEFAULT_TEMPLATE.boardText;
       template.teacherText = sanitizeText(t_teacherText.value) || DEFAULT_TEMPLATE.teacherText;
+      template.logoSizeMm = Math.max(4, Math.min(20, toNumberOrZero(t_logoSize?.value) || DEFAULT_TEMPLATE.logoSizeMm));
 
       template.wMm = Math.max(50, Math.min(200, toNumberOrZero(t_w.value) || DEFAULT_TEMPLATE.wMm));
       template.hMm = Math.max(40, Math.min(120, toNumberOrZero(t_h.value) || DEFAULT_TEMPLATE.hMm));
@@ -1328,9 +1748,62 @@
 
       template.showPhoto = (t_showPhoto.value === "1");
       template.showQr = (t_showQr.value === "1");
+      template.showIdno = !!chkShowIdno?.checked;
+      template.showClass = !!chkShowClass?.checked;
+      template.showRoom = !!chkShowRoom?.checked;
+      template.showSession = !!chkShowSession?.checked;
+      template.showSeat = !!chkShowSeat?.checked;
       template.mode = t_mode.value || "simple";
 
       template.html = sanitizeTemplateHTML((t_html.value || DEFAULT_TEMPLATE.html).trim());
+    }
+
+    async function updateSignatureFromFile(file){
+      if(!file) return;
+      try{
+        template.signatureImage = await readImageFileAsScaledDataURL(file, 600, 240);
+        setSignaturePreview(template.signatureImage);
+        renderMiniPreview();
+        if(panelPreview && !panelPreview.classList.contains("hide")) renderFullPreview();
+        try{ saveTemplate(); }catch(e){ console.warn("saveTemplate failed", e); }
+        showToast("Tanda tangan ditambahkan.");
+      }catch(e){
+        showToast("Gagal membaca tanda tangan: " + (e?.message || e), "error");
+      }
+    }
+
+    function clearSignatureImage(){
+      template.signatureImage = "";
+      if(t_signatureFile) t_signatureFile.value = "";
+      setSignaturePreview("");
+      renderMiniPreview();
+      if(panelPreview && !panelPreview.classList.contains("hide")) renderFullPreview();
+      try{ saveTemplate(); }catch(e){ console.warn("saveTemplate failed", e); }
+      showToast("Tanda tangan dihapus.");
+    }
+
+    async function updateLogoFromFile(file){
+      if(!file) return;
+      try{
+        template.logoImage = await readImageFileAsScaledDataURL(file, 200, 120);
+        setLogoPreview(template.logoImage);
+        renderMiniPreview();
+        if(panelPreview && !panelPreview.classList.contains("hide")) renderFullPreview();
+        try{ saveTemplate(); }catch(e){ console.warn("saveTemplate failed", e); }
+        showToast("Logo ditambahkan.");
+      }catch(e){
+        showToast("Gagal membaca logo: " + (e?.message || e), "error");
+      }
+    }
+
+    function clearLogoImage(){
+      template.logoImage = "";
+      if(t_logoFile) t_logoFile.value = "";
+      setLogoPreview("");
+      renderMiniPreview();
+      if(panelPreview && !panelPreview.classList.contains("hide")) renderFullPreview();
+      try{ saveTemplate(); }catch(e){ console.warn("saveTemplate failed", e); }
+      showToast("Logo dihapus.");
     }
 
     function resetTemplate(){
@@ -1363,6 +1836,44 @@
         });
       });
     });
+
+    [chkShowIdno, chkShowClass, chkShowRoom, chkShowSession, chkShowSeat].forEach(el => {
+      if(!el) return;
+      el.addEventListener("change", () => {
+        pullTemplateFromUI();
+        renderMiniPreview();
+        if(panelPreview && !panelPreview.classList.contains("hide")) renderFullPreview();
+      });
+    });
+
+    if(t_signatureFile){
+      t_signatureFile.addEventListener("change", async () => {
+        const file = t_signatureFile.files && t_signatureFile.files[0];
+        if(!file) return;
+        await updateSignatureFromFile(file);
+      });
+    }
+
+    if(t_signatureClear){
+      t_signatureClear.addEventListener("click", clearSignatureImage);
+    }
+    if(t_logoFile){
+      t_logoFile.addEventListener("change", async () => {
+        const file = t_logoFile.files && t_logoFile.files[0];
+        if(!file) return;
+        await updateLogoFromFile(file);
+      });
+    }
+    if(t_logoClear){
+      t_logoClear.addEventListener("click", clearLogoImage);
+    }
+    if(t_logoSize){
+      t_logoSize.addEventListener("input", () => {
+        pullTemplateFromUI();
+        renderMiniPreview();
+        if(panelPreview && !panelPreview.classList.contains("hide")) renderFullPreview();
+      });
+    }
 
     // ===== Card Rendering =====
     function cardStyleVars(){
@@ -1403,6 +1914,7 @@
         sigLabel: template.sigLabel || DEFAULT_TEMPLATE.sigLabel,
         name: student.name || "-",
         idno: student.idno || "-",
+        nisnId: student.nisnId || "-",
         class: student.class || "-",
         room: student.room || "-",
         session: student.session || "-",
@@ -1414,32 +1926,43 @@
 
       if(template.mode === "html"){
         let html = sanitizeTemplateHTML(template.html);
+        html = injectLogoPlaceholder(html);
+        if(template.signatureImage && !html.includes("{{signature}}")){
+          html = html.replaceAll("{{sigLabel}}", "{{sigLabel}}{{signature}}");
+        }
         html = html.replaceAll("{{school}}", escapeHtml(data.school));
         html = html.replaceAll("{{exam}}", escapeHtml(data.exam));
         html = html.replaceAll("{{year}}", escapeHtml(data.year));
         html = html.replaceAll("{{sigLabel}}", escapeHtml(data.sigLabel));
+        html = html.replaceAll("{{logo}}", getLogoHtml());
         html = html.replaceAll("{{principal}}", escapeHtml(data.principal));
         html = html.replaceAll("{{nip}}", escapeHtml(data.nip));
         html = html.replaceAll("{{headmaster}}", escapeHtml(data.principal)); // alias
         html = html.replaceAll("{{headmasterNip}}", escapeHtml(data.nip)); // alias
         html = html.replaceAll("{{name}}", escapeHtml(data.name));
         html = html.replaceAll("{{idno}}", escapeHtml(data.idno));
+        html = html.replaceAll("{{nisnId}}", escapeHtml(data.nisnId));
         html = html.replaceAll("{{class}}", escapeHtml(data.class));
         html = html.replaceAll("{{room}}", escapeHtml(data.room));
         html = html.replaceAll("{{session}}", escapeHtml(data.session));
         html = html.replaceAll("{{seat}}", escapeHtml(data.seat));
+        html = html.replaceAll("{{details}}", buildDetailLines(data));
+        html = html.replaceAll("{{signature}}", getSignatureBlockHtml());
         html = html.replaceAll("{{photo}}", getPhotoHtml(student));
         html = html.replaceAll("{{qr}}", template.showQr ? `<div class="qr" data-qr="1" data-qrtext="${escapeHtml(makeQrText(student))}"></div>` : `<div style="display:none"></div>`);
-        return html;
+        return stripHiddenDetailRowsFromHtml(html);
       }
 
       // Simple mode (fixed layout)
       return `
         <div class="examCard">
           <div class="bar">
-            <div style="min-width:0">
-              <div class="title">${escapeHtml(template.exam)}</div>
-              <div class="sub">${escapeHtml(template.school)} â€¢ ${escapeHtml(template.year)}</div>
+            <div style="min-width:0; display:flex; align-items:center; gap:8px">
+              ${getLogoHtml()}
+              <div style="min-width:0">
+                <div class="title">${escapeHtml(template.exam)}</div>
+                <div class="sub">${escapeHtml(template.school)} â€¢ ${escapeHtml(template.year)}</div>
+              </div>
             </div>
             <div style="text-align:right; font-size:9px; opacity:.95; white-space:nowrap">Kartu Ujian</div>
           </div>
@@ -1448,16 +1971,12 @@
             <div class="info">
               <div class="details">
                 <div class="name">${escapeHtml(data.name)}</div>
-                <div class="line"><div class="label">ID</div><div class="value">${escapeHtml(data.idno)}</div></div>
-                <div class="line"><div class="label">Kelas</div><div class="value">${escapeHtml(data.class)}</div></div>
-                <div class="line"><div class="label">Ruang</div><div class="value">${escapeHtml(data.room)}</div></div>
-                <div class="line"><div class="label">Sesi</div><div class="value">${escapeHtml(data.session)}</div></div>
-                <div class="line"><div class="label">No Duduk</div><div class="value">${escapeHtml(data.seat)}</div></div>
+                ${buildDetailLines(data)}
               </div>
               <div class="foot">
                 <div class="stamp">
                   <span class="sigLabel">${escapeHtml(data.sigLabel)}</span>
-                  <span class="sigSpace" aria-hidden="true"></span>
+                  <div class="sigBlock">${getSignatureHtml() || ""}</div>
                   <span class="sigName">${escapeHtml(data.principal)}</span>
                   <span class="sigNip">NIP. ${escapeHtml(data.nip)}</span>
                 </div>
@@ -1488,7 +2007,7 @@
 
     function renderMiniPreview(){
       // Buat contoh kartu dari peserta pertama atau dummy
-      const s = students[0] || { id:"demo", name:"Nama Contoh", idno:"0000000000", class:"9A", room:"03", session:"1", seat:"12", photo:"" };
+      const s = students[0] || { id:"demo", name:"Nama Contoh", idno:"0000000000", nisnId:"1234567890", class:"9A", room:"03", session:"1", seat:"12", photo:"" };
       miniPreview.innerHTML = `
         <div style="display:flex; justify-content:center">
           <div style="${cardStyleVars()}">${buildCardHTML(s)}</div>
@@ -1841,10 +2360,10 @@
       const { cols } = layoutToGrid(layout);
       const list = sortStudents(students);
 
-      metaInfo.textContent = `${list.length} kartu â€¢ layout ${layout}/halaman â€¢ ukuran kartu ${template.wMm}Ã—${template.hMm}mm`;
+        metaInfo.textContent = `${list.length} kartu • layout ${layout}/halaman • ukuran kartu ${template.wMm}x${template.hMm}mm`;
 
       if(list.length === 0){
-        previewArea.innerHTML = `<div class="muted">Belum ada data peserta. Tambahkan data dulu di tab â€œData Pesertaâ€.</div>`;
+        previewArea.innerHTML = `<div class="muted">Belum ada data peserta. Tambahkan data dulu di tab "Data Peserta".</div>`;
         return;
       }
 
@@ -1944,8 +2463,8 @@
         return;
       }
 
-      const headers = ["Nama", "ID", "Kelas", "Ruang", "Sesi", "No Duduk", "Foto"];
-      const example = ["Siti Nurhaliza", "0051234567", "9A", "03", "1", "12", "https://... (opsional)"];
+      const headers = ["Nama", "ID", "NISN/NIM/ID", "Kelas", "Ruang", "Sesi", "No Duduk", "Foto"];
+      const example = ["Siti Nurhaliza", "0051234567", "1234567890", "9A", "03", "1", "12", "https://... (opsional)"];
       const aoa = [headers, example];
       const ws = XLSX.utils.aoa_to_sheet(aoa);
       const wb = XLSX.utils.book_new();
@@ -1992,6 +2511,7 @@
       const idx = {
         name: headerRow.findIndex(h => ["nama", "name"].includes(h)),
         idno: headerRow.findIndex(h => ["id", "nisn", "nim", "idno", "nomor", "no", "no id"].includes(h)),
+        nisnId: headerRow.findIndex(h => ["nisn/nim/id", "nisn nim id", "nisn", "nim", "id tambahan", "nisn id"].includes(h)),
         klass: headerRow.findIndex(h => ["kelas", "class"].includes(h)),
         room: headerRow.findIndex(h => ["ruang", "room"].includes(h)),
         session: headerRow.findIndex(h => ["sesi", "session"].includes(h)),
@@ -2013,13 +2533,14 @@
         const idno = cellToText(row[idx.idno]);
         if(!name || !idno) continue;
 
+        const nisnId = idx.nisnId >= 0 ? cellToText(row[idx.nisnId]) : "";
         const klass = idx.klass >= 0 ? cellToText(row[idx.klass]) : "";
         const room = idx.room >= 0 ? cellToText(row[idx.room]) : "";
         const session = idx.session >= 0 ? cellToText(row[idx.session]) : "";
         const seat = idx.seat >= 0 ? cellToText(row[idx.seat]) : "";
         const photo = idx.photo >= 0 ? cellToText(row[idx.photo]) : "";
 
-        imported.push({ id: uid(), name, idno, class: klass, room, session, seat, photo, order: Date.now() + r });
+        imported.push({ id: uid(), name, idno, nisnId, class: klass, room, session, seat, photo, order: Date.now() + r });
       }
 
       if(imported.length === 0){
@@ -2092,7 +2613,7 @@
     seat_height.addEventListener("change", () => renderSeatingUI(false));
     seat_orientation.addEventListener("change", () => setPageOrientation(getSeatOrientation()));
     seat_order.addEventListener("change", () => renderSeatingUI(false));
-    [in_name,in_idno,in_class,in_room,in_session,in_seat,in_photoUrl].forEach(el => {
+    [in_name,in_idno,in_nisnId,in_class,in_room,in_session,in_seat,in_photoUrl].forEach(el => {
       el.addEventListener("keydown", (e) => {
         if(e.key === "Enter"){
           e.preventDefault();
@@ -2117,9 +2638,14 @@
       }
     });
 
+    window.addEventListener("scroll", syncTopbarState, { passive: true });
+    window.addEventListener("resize", syncTopbarState);
+
     // ===== Init =====
     bindTemplateToUI();
     syncPrintPageStyle();
+    syncTopbarState();
+    if(p_layout && !p_layout.value) p_layout.value = "8";
     if(seat_gap && !seat_gap.value) seat_gap.value = "8";
     if(seat_height && !seat_height.value) seat_height.value = "70";
     if(seat_order && !seat_order.value) seat_order.value = "left";
