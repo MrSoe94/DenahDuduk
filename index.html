@@ -9,6 +9,8 @@
   <!-- PDF Export (html2pdf.js) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
     crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
   <!-- QR Code (qrcodejs) -->
   <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
   <!-- XLSX Import/Export (SheetJS) -->
@@ -1116,6 +1118,54 @@
       .seatCellPrint .seatMeta {
         color: #000 !important;
       }
+    }
+
+    .pdfExportMode {
+      background: #fff;
+      display: block;
+    }
+
+    .pdfExportMode .sheet {
+      box-shadow: none;
+      margin: 0;
+    }
+
+    .pdfExportMode .sheet,
+    .pdfExportMode .seatSheet {
+      color: #000 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .pdfExportMode .examCard,
+    .pdfExportMode .examCard * {
+      color: #000 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .pdfExportMode .examCard {
+      border: 1px solid #000 !important;
+      background: #fff !important;
+    }
+
+    .pdfExportMode .examCard .bar {
+      background: var(--cardPrimary, #4f46e5) !important;
+      border-bottom: 1px solid #000 !important;
+      color: #fff !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .pdfExportMode .examCard .bar * {
+      color: #fff !important;
+    }
+
+    .pdfExportMode .seatCell,
+    .pdfExportMode .seatCell * {
+      color: #000 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
   </style>
   <style id="printPageStyle"></style>
@@ -3226,21 +3276,49 @@
     async function exportPDF() {
       syncPrintPageStyle();
       renderFullPreview();
-      const element = previewArea; // export what you see
       const filename = `Kartu_Ujian_${(template.school || "Sekolah").replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
       const orientation = p_orientation.value === "landscape" ? "landscape" : "portrait";
 
-      const opt = {
-        margin: 0,
-        filename,
-        image: { type: "jpeg", quality: 0.95 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
-        jsPDF: { unit: "mm", format: "a4", orientation }
-      };
+      const jsPDFCtor = window.jspdf?.jsPDF || window.jsPDF;
+      if (!window.html2canvas || !jsPDFCtor) {
+        alert("Library PDF belum siap. Coba refresh halaman.");
+        return;
+      }
 
       // Wait a moment so QR canvas is rendered
       await new Promise(r => setTimeout(r, 150));
-      html2pdf().set(opt).from(element).save();
+
+      try {
+        const pdf = new jsPDFCtor({ unit: "mm", format: "a4", orientation });
+        const sheets = [...previewArea.querySelectorAll(".sheet")];
+        if (!sheets.length) {
+          alert("Tidak ada kartu untuk diekspor.");
+          return;
+        }
+
+        for (let i = 0; i < sheets.length; i++) {
+          const canvas = await window.html2canvas(sheets[i], {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: "#ffffff"
+          });
+          const imgData = canvas.toDataURL("image/png");
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const pageHeight = pdf.internal.pageSize.getHeight();
+          const imgWidth = pageWidth;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          const drawHeight = Math.min(imgHeight, pageHeight);
+          const drawWidth = (canvas.width * drawHeight) / canvas.height;
+          const x = (pageWidth - drawWidth) / 2;
+          const y = (pageHeight - drawHeight) / 2;
+          if (i > 0) pdf.addPage();
+          pdf.addImage(imgData, "PNG", x, y, drawWidth, drawHeight);
+        }
+        pdf.save(filename);
+      } catch (err) {
+        console.error(err);
+        alert("Gagal export PDF.");
+      }
     }
 
     // ===== Backup JSON =====
