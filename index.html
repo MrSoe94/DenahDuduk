@@ -1580,6 +1580,7 @@
 
         <div class="previewChecks" aria-label="Tampilkan item kartu">
           <label class="checkItem"><input id="chkShowIdno" type="checkbox" checked /> No Peserta</label>
+          <label class="checkItem"><input id="chkShowNisnId" type="checkbox" checked /> NISN/NIM/ID</label>
           <label class="checkItem"><input id="chkShowClass" type="checkbox" checked /> Kelas</label>
           <label class="checkItem"><input id="chkShowRoom" type="checkbox" checked /> Ruang</label>
           <label class="checkItem"><input id="chkShowSession" type="checkbox" checked /> Sesi</label>
@@ -1737,6 +1738,7 @@
       signatureWidthMm: 16,
       sigGapMm: 0.5,
       showIdno: true,
+      showNisnId: true,
       showClass: true,
       showRoom: true,
       showSession: true,
@@ -1855,6 +1857,7 @@
     const p_orientation = document.getElementById("p_orientation");
     const p_sort = document.getElementById("p_sort");
     const chkShowIdno = document.getElementById("chkShowIdno");
+    const chkShowNisnId = document.getElementById("chkShowNisnId");
     const chkShowClass = document.getElementById("chkShowClass");
     const chkShowRoom = document.getElementById("chkShowRoom");
     const chkShowSession = document.getElementById("chkShowSession");
@@ -2159,7 +2162,7 @@
     function buildDetailLines(data) {
       const rows = [];
       if (template.showIdno !== false) rows.push({ label: template.idnoLabel || DEFAULT_TEMPLATE.idnoLabel, value: data.idno });
-      if (data.nisnId) rows.push({ label: template.nisnLabel || DEFAULT_TEMPLATE.nisnLabel, value: data.nisnId });
+      if (template.showNisnId !== false && data.nisnId) rows.push({ label: template.nisnLabel || DEFAULT_TEMPLATE.nisnLabel, value: data.nisnId });
       if (template.showClass !== false) rows.push({ label: template.classLabel || DEFAULT_TEMPLATE.classLabel, value: data.class });
       if (template.showRoom !== false) rows.push({ label: template.roomLabel || DEFAULT_TEMPLATE.roomLabel, value: data.room });
       if (template.showSession !== false) rows.push({ label: template.sessionLabel || DEFAULT_TEMPLATE.sessionLabel, value: data.session });
@@ -2170,6 +2173,7 @@
     function stripHiddenDetailRowsFromHtml(html) {
       const rows = [
         { show: template.showIdno !== false, label: "No Peserta" },
+        { show: template.showNisnId !== false, label: template.nisnLabel || DEFAULT_TEMPLATE.nisnLabel },
         { show: template.showClass !== false, label: "Kelas" },
         { show: template.showRoom !== false, label: "Ruang" },
         { show: template.showSession !== false, label: "Sesi" },
@@ -2402,6 +2406,7 @@
       if (t_signatureWidth) t_signatureWidth.value = template.signatureWidthMm ?? DEFAULT_TEMPLATE.signatureWidthMm;
       if (t_sigGapMm) t_sigGapMm.value = template.sigGapMm ?? DEFAULT_TEMPLATE.sigGapMm;
       if (chkShowIdno) chkShowIdno.checked = template.showIdno !== false;
+      if (chkShowNisnId) chkShowNisnId.checked = template.showNisnId !== false;
       if (chkShowClass) chkShowClass.checked = template.showClass !== false;
       if (chkShowRoom) chkShowRoom.checked = template.showRoom !== false;
       if (chkShowSession) chkShowSession.checked = template.showSession !== false;
@@ -2449,6 +2454,7 @@
       template.signatureWidthMm = Math.max(1, toNumberOrZero(t_signatureWidth?.value) || DEFAULT_TEMPLATE.signatureWidthMm);
       template.sigGapMm = Math.max(0, toNumberOrZero(t_sigGapMm?.value) || DEFAULT_TEMPLATE.sigGapMm);
       template.showIdno = !!chkShowIdno?.checked;
+      template.showNisnId = !!chkShowNisnId?.checked;
       template.showClass = !!chkShowClass?.checked;
       template.showRoom = !!chkShowRoom?.checked;
       template.showSession = !!chkShowSession?.checked;
@@ -2561,7 +2567,7 @@
       });
     });
 
-    [chkShowIdno, chkShowClass, chkShowRoom, chkShowSession, chkShowSeat].forEach(el => {
+    [chkShowIdno, chkShowNisnId, chkShowClass, chkShowRoom, chkShowSession, chkShowSeat].forEach(el => {
       if (!el) return;
       el.addEventListener("change", () => {
         pullTemplateFromUI();
