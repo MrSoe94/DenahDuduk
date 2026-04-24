@@ -180,6 +180,11 @@
         padding: 8px 10px;
         font-size: 12px
       }
+
+      .backToTop {
+        right: 12px;
+        bottom: 12px;
+      }
     }
 
     .btn {
@@ -214,6 +219,46 @@
     .btn.warn {
       background: rgba(245, 158, 11, .18);
       border-color: rgba(245, 158, 11, .40)
+    }
+
+    .backToTop {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      width: 46px;
+      height: 46px;
+      border-radius: 999px;
+      border: 1px solid rgba(124, 58, 237, .45);
+      background: rgba(11, 18, 32, .92);
+      color: #fff;
+      box-shadow: 0 14px 30px rgba(0, 0, 0, .35);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 1100;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(10px);
+      transition: opacity .18s ease, transform .18s ease, visibility .18s ease, background .18s ease;
+    }
+
+    .backToTop svg {
+      width: 20px;
+      height: 20px;
+      display: block;
+      pointer-events: none;
+    }
+
+    .backToTop:hover {
+      background: rgba(124, 58, 237, .34);
+      transform: translateY(-1px)
+    }
+
+    .backToTop.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0)
     }
 
     .grid {
@@ -1123,6 +1168,7 @@
 
       .wrap,
       .topbar,
+      .backToTop,
       .card,
       .paper,
       .previewTools,
@@ -1874,6 +1920,12 @@
     </div>
   </div>
 
+  <button class="backToTop" id="btnBackToTop" type="button" aria-label="Kembali ke atas" title="Kembali ke atas">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M12 5 5.5 11.5l1.4 1.4 4.1-4.1V19h2V8.8l4.1 4.1 1.4-1.4z" fill="currentColor" />
+    </svg>
+  </button>
+
   <!-- Hidden print root (only visible in print) -->
   <div id="printRoot" class="hide"></div>
   <div id="toastWrap" class="toastWrap" aria-live="polite" aria-atomic="true"></div>
@@ -2060,6 +2112,7 @@
     const metaInfo = document.getElementById("metaInfo");
     const printRoot = document.getElementById("printRoot");
     const printPageStyle = document.getElementById("printPageStyle");
+    const btnBackToTop = document.getElementById("btnBackToTop");
 
     const seat_room = document.getElementById("seat_room");
     const seat_session = document.getElementById("seat_session");
@@ -2167,6 +2220,25 @@
     function syncTopbarState() {
       if (!topbar) return;
       topbar.classList.toggle("stuck", window.scrollY > 8);
+      btnBackToTop?.classList.toggle("show", window.scrollY > 320);
+    }
+
+    function scrollToTopSmooth(duration = 520) {
+      const startY = window.scrollY || window.pageYOffset || 0;
+      if (startY <= 0) return;
+
+      const startTime = performance.now();
+      const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+
+      function step(now) {
+        const progress = Math.min(1, (now - startTime) / duration);
+        const eased = easeOutCubic(progress);
+        const nextY = Math.max(0, Math.round(startY * (1 - eased)));
+        window.scrollTo(0, nextY);
+        if (progress < 1) requestAnimationFrame(step);
+      }
+
+      requestAnimationFrame(step);
     }
 
     function sanitizeTemplateHTML(html) {
@@ -3865,6 +3937,9 @@
 
     window.addEventListener("scroll", syncTopbarState, { passive: true });
     window.addEventListener("resize", syncTopbarState);
+    btnBackToTop?.addEventListener("click", () => {
+      scrollToTopSmooth();
+    });
 
     // ===== Init =====
     bindTemplateToUI();
